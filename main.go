@@ -41,7 +41,7 @@ func parseArgs() {
 	timeout = (time.Duration(*t)) * time.Second
 
 	url = os.Args[len(os.Args)-1]
-	fmt.Printf("url: %d\n", concurrency)
+	fmt.Printf("url: %s\n", url)
 }
 
 func main() {
