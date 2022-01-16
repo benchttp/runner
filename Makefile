@@ -32,6 +32,12 @@ endif
 test:
 	@go test -timeout 30s -run $(TEST_FUNC) $(TEST_PKG)
 
+# Build
+
+.PHONY: Build
+build:
+	@go build -v ./cmd/runner/main.go
+
 # Docs
 
 .PHONY: docs
