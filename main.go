@@ -6,12 +6,13 @@ import (
 	"os"
 	"time"
 
+	"github.com/benchttp/runner/request"
 	"github.com/benchttp/runner/sem"
 )
 
 const (
 	DEFAULT_CONCURRENCY = 1
-	DEFAULT_REQUESTS    = 100
+	DEFAULT_REQUESTS    = 0 // Use duration as exit condition if omitted.
 	DEFAULT_DURATION    = 60
 	DEFAULT_TIMEOUT     = 10
 )
@@ -55,9 +56,12 @@ func main() {
 		quit <- struct{}{}
 	}()
 
-	rec := sem.Run(quit, url, concurrency, requests, timeout)
-
-	for _, r := range rec {
-		println(r.String())
+	var rec []request.Record
+	if requests > 0 {
+		rec = sem.RunFor(requests, quit, url, concurrency, timeout)
+	} else {
+		rec = sem.RunUntil(quit, concurrency, url, timeout)
 	}
+
+	println(len(rec))
 }
