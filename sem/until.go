@@ -39,7 +39,6 @@ func RunUntil(quit <-chan struct{}, concurrency int, url string, timeout time.Du
 		}
 	}()
 
-	i := 0
 	for {
 		select {
 		case <-quit:
@@ -49,11 +48,10 @@ func RunUntil(quit <-chan struct{}, concurrency int, url string, timeout time.Du
 			return rec
 		default:
 		}
-		i++
 		acquire()
-		go func(i int) {
+		go func() {
 			defer release()
 			c <- request.Do(url, timeout)
-		}(i)
+		}()
 	}
 }
