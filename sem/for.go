@@ -11,7 +11,7 @@ import (
 // and processes the results as they come in. The number of concurrent threads
 // is limited by concurrency value.
 // Once all requests have been made or on quit signal, returns the results.
-func RunFor(requests int, quit <-chan struct{}, url string, concurrency int, timeout time.Duration) []request.Record {
+func RunFor(requests int, quit <-chan struct{}, concurrency int, url string, timeout time.Duration) []request.Record {
 	// sem is a semaphore to constrain access to at most n concurrent threads.
 	sem := make(chan int, concurrency)
 	c := make(chan request.Record, requests)

@@ -58,7 +58,7 @@ func main() {
 
 	var rec []request.Record
 	if requests > 0 {
-		rec = sem.RunFor(requests, quit, url, concurrency, timeout)
+		rec = sem.RunFor(requests, quit, concurrency, url, timeout)
 	} else {
 		rec = sem.RunUntil(quit, concurrency, url, timeout)
 	}
