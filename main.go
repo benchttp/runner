@@ -20,14 +20,14 @@ const (
 var (
 	url         string
 	concurrency int           // Number of connections to run concurrently.
-	requests    int           // Number of requests to run.
+	requests    int           // Number of requests to run, use duration as exit condition if omitted.
 	duration    time.Duration // Duration of test, in seconds.
 	timeout     time.Duration // Timeout for each http request, in seconds.
 )
 
 func parseArgs() {
 	c := flag.Int("c", DEFAULT_CONCURRENCY, "Number of connections to run concurrently")
-	r := flag.Int("r", DEFAULT_REQUESTS, "Number of requests to run")
+	r := flag.Int("r", DEFAULT_REQUESTS, "Number of requests to run, use duration as exit condition if omitted")
 	d := flag.Int("d", DEFAULT_DURATION, "Duration of test, in seconds")
 	t := flag.Int("t", DEFAULT_TIMEOUT, "Timeout for each http request, in seconds")
 
