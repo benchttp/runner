@@ -7,14 +7,16 @@ import (
 	"github.com/benchttp/runner/request"
 )
 
-// RunFor launches a goroutine to ping url as soon as a thread is available
-// and processes the results as they come in. The number of concurrent threads
-// is limited by concurrency value.
-// Once all requests have been made or on quit signal, returns the results.
-func RunFor(requests int, quit <-chan struct{}, concurrency int, url string, timeout time.Duration) []request.Record {
+// RunFor launches a goroutine to ping url as soon as a thread is
+// available and sends the results through a pipeline as they come in.
+// Returns a channel to pipeline the records.
+// The value of concurrency limits the number of concurrent threads.
+// Once all requests have been made or on quit signal, waits for
+// goroutines and closes the records channel.
+func RunFor(requests int, quit <-chan struct{}, concurrency int, url string, timeout time.Duration) <-chan request.Record {
 	// sem is a semaphore to constrain access to at most n concurrent threads.
 	sem := make(chan int, concurrency)
-	c := make(chan request.Record, requests)
+	rec := make(chan request.Record, requests)
 
 	var wg sync.WaitGroup
 
@@ -27,37 +29,24 @@ func RunFor(requests int, quit <-chan struct{}, concurrency int, url string, tim
 		wg.Done()
 	}
 
-	rec := []request.Record{}
-	// done signals when the processing of rec is done.
-	done := make(chan struct{}, 1)
-
 	go func() {
 		defer func() {
-			done <- struct{}{}
+			wg.Wait()
+			close(rec)
 		}()
-		for r := range c {
-			rec = append(rec, r)
+		for i := 0; i < requests; i++ {
+			select {
+			case <-quit:
+				return
+			default:
+			}
+			acquire()
+			go func() {
+				defer release()
+				rec <- request.Do(url, timeout)
+			}()
 		}
 	}()
 
-	for i := 0; i < requests; i++ {
-		select {
-		case <-quit:
-			wg.Wait()
-			close(c)
-			<-done // Block until c has been emptied.
-			return rec
-		default:
-		}
-		acquire()
-		go func() {
-			defer release()
-			c <- request.Do(url, timeout)
-		}()
-	}
-
-	wg.Wait()
-	close(c)
-	<-done // Block until c has been emptied.
 	return rec
 }

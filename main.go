@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/benchttp/runner/report"
 	"github.com/benchttp/runner/request"
 	"github.com/benchttp/runner/sem"
 )
@@ -56,12 +57,13 @@ func main() {
 		quit <- struct{}{}
 	}()
 
-	var rec []request.Record
+	var rec <-chan request.Record
 	if requests > 0 {
 		rec = sem.RunFor(requests, quit, concurrency, url, timeout)
 	} else {
 		rec = sem.RunUntil(quit, concurrency, url, timeout)
 	}
 
-	println(len(rec))
+	reports := report.Collect(rec)
+	println(len(reports))
 }
