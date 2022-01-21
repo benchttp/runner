@@ -33,16 +33,20 @@ func parseArgs() {
 
 	flag.Parse()
 
+	url = os.Args[len(os.Args)-1]
+	fmt.Printf("Testing url: %s\n", url)
+
 	concurrency = *c
 	fmt.Printf("concurrency: %d\n", concurrency)
 	requests = *r
-	fmt.Printf("requests: %d\n", requests)
+	if *r > 0 {
+		fmt.Printf("requests: %d\n", requests)
+	}
 	duration = (time.Duration(*d)) * time.Second
 	fmt.Printf("duration: %s\n", duration)
 	timeout = (time.Duration(*t)) * time.Second
 
-	url = os.Args[len(os.Args)-1]
-	fmt.Printf("url: %s\n", url)
+	println()
 }
 
 func main() {
