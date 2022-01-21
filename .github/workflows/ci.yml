@@ -1,4 +1,3 @@
-
 name: Lint & Test & Build
 
 on: [pull_request]
