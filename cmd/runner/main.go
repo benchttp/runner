@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	DEFAULT_CONCURRENCY = 1
-	DEFAULT_REQUESTS    = 0 // Use duration as exit condition if omitted.
-	DEFAULT_DURATION    = 60
-	DEFAULT_TIMEOUT     = 10
+	DefaultConcurrency = 1
+	DefaultRequests    = 0 // Use duration as exit condition if omitted.
+	DefaultDuration    = 60
+	DefaultTimeout     = 10
 )
 
 var (
@@ -26,10 +26,10 @@ var (
 )
 
 func parseArgs() {
-	c := flag.Int("c", DEFAULT_CONCURRENCY, "Number of connections to run concurrently")
-	r := flag.Int("r", DEFAULT_REQUESTS, "Number of requests to run, use duration as exit condition if omitted")
-	d := flag.Int("d", DEFAULT_DURATION, "Duration of test, in seconds")
-	t := flag.Int("t", DEFAULT_TIMEOUT, "Timeout for each http request, in seconds")
+	c := flag.Int("c", DefaultConcurrency, "Number of connections to run concurrently")
+	r := flag.Int("r", DefaultRequests, "Number of requests to run, use duration as exit condition if omitted")
+	d := flag.Int("d", DefaultDuration, "Duration of test, in seconds")
+	t := flag.Int("t", DefaultTimeout, "Timeout for each http request, in seconds")
 
 	flag.Parse()
 
