@@ -47,22 +47,5 @@ func newRecord(resp *http.Response, t time.Duration) Record {
 }
 
 func (r Record) String() string {
-	return fmt.Sprintf("status %s, took %s", r.code, r.cost)
-}
-
-func Do(url string, timeout time.Duration) Record {
-	client := http.Client{
-		// Timeout includes connection time, any redirects, and reading the response body.
-		// We may want exclude reading the response body in our benchmark tool.
-		Timeout: timeout,
-	}
-
-	t0 := time.Now()
-
-	resp, err := client.Get(url)
-	if err != nil {
-		return Record{error: fmt.Sprint(err)}
-	}
-
-	return newRecord(resp, time.Since(t0))
+	return fmt.Sprintf("took %s", r.cost)
 }
