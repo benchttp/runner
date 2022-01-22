@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/benchttp/runner/report"
 	"github.com/benchttp/runner/request"
 )
 
@@ -51,13 +50,12 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), duration)
 	defer cancel()
 
-	var rec <-chan request.Record
+	var rec []request.Record
 	if requests > 0 {
 		rec = request.Do(requests, ctx.Done(), concurrency, url, timeout)
 	} else {
 		rec = request.DoUntil(ctx.Done(), concurrency, url, timeout)
 	}
 
-	reports := report.Collect(rec)
-	println(len(reports))
+	println(len(rec))
 }

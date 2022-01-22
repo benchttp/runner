@@ -45,7 +45,7 @@ func release(sem <-chan int, wg *sync.WaitGroup) {
 // The value of concurrency limits the number of concurrent threads.
 // Once all requests have been made or on quit signal, waits for
 // goroutines and closes the records channel.
-func Do(requests int, quit <-chan struct{}, concurrency int, url string, timeout time.Duration) <-chan Record {
+func Do(requests int, quit <-chan struct{}, concurrency int, url string, timeout time.Duration) []Record {
 	// sem is a semaphore to constrain access to at most n concurrent threads.
 	sem := make(chan int, concurrency)
 	rec := make(chan Record, requests)
@@ -69,7 +69,7 @@ func Do(requests int, quit <-chan struct{}, concurrency int, url string, timeout
 		}
 	}()
 
-	return rec
+	return collect(rec)
 }
 
 // DoUntil launches a goroutine to ping url as soon as a thread is
@@ -77,7 +77,7 @@ func Do(requests int, quit <-chan struct{}, concurrency int, url string, timeout
 // Returns a channel to pipeline the records.
 // The value of concurrency limits the number of concurrent threads.
 // On quit signal, waits for goroutines and closes the records channel.
-func DoUntil(quit <-chan struct{}, concurrency int, url string, timeout time.Duration) <-chan Record {
+func DoUntil(quit <-chan struct{}, concurrency int, url string, timeout time.Duration) []Record {
 	// sem is a semaphore to constrain access to at most n concurrent threads.
 	sem := make(chan int, concurrency)
 	rec := make(chan Record)
@@ -101,5 +101,5 @@ func DoUntil(quit <-chan struct{}, concurrency int, url string, timeout time.Dur
 		}
 	}()
 
-	return rec
+	return collect(rec)
 }
