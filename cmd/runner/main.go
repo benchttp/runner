@@ -52,9 +52,9 @@ func main() {
 
 	var rec []request.Record
 	if requests > 0 {
-		rec = request.Do(requests, ctx.Done(), concurrency, url, timeout)
+		rec = request.Do(ctx, requests, concurrency, url, timeout)
 	} else {
-		rec = request.DoUntil(ctx.Done(), concurrency, url, timeout)
+		rec = request.DoUntil(ctx, concurrency, url, timeout)
 	}
 
 	println(len(rec))

@@ -1,6 +1,7 @@
 package request
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"sync"
@@ -40,12 +41,11 @@ func release(sem <-chan int, wg *sync.WaitGroup) {
 }
 
 // Do launches a goroutine to ping url as soon as a thread is
-// available and sends the results through a pipeline as they come in.
-// Returns a channel to pipeline the records.
+// available and collects the results as they come in.
 // The value of concurrency limits the number of concurrent threads.
-// Once all requests have been made or on quit signal, waits for
-// goroutines and closes the records channel.
-func Do(requests int, quit <-chan struct{}, concurrency int, url string, timeout time.Duration) []Record {
+// Once all requests have been made or on done signal from ctx,
+// waits for goroutines to end and returns the collected records.
+func Do(ctx context.Context, requests int, concurrency int, url string, timeout time.Duration) []Record {
 	// sem is a semaphore to constrain access to at most n concurrent threads.
 	sem := make(chan int, concurrency)
 	rec := make(chan Record, requests)
@@ -55,7 +55,7 @@ func Do(requests int, quit <-chan struct{}, concurrency int, url string, timeout
 	go func() {
 		for i := 0; i < requests; i++ {
 			select {
-			case <-quit:
+			case <-ctx.Done():
 				wg.Wait()
 				close(rec)
 				return
@@ -73,11 +73,11 @@ func Do(requests int, quit <-chan struct{}, concurrency int, url string, timeout
 }
 
 // DoUntil launches a goroutine to ping url as soon as a thread is
-// available and sends the results through a pipeline as they come in.
-// Returns a channel to pipeline the records.
+// available and collects the results as they come in.
 // The value of concurrency limits the number of concurrent threads.
-// On quit signal, waits for goroutines and closes the records channel.
-func DoUntil(quit <-chan struct{}, concurrency int, url string, timeout time.Duration) []Record {
+// On done signal from ctx, waits for goroutines to end and returns
+// the collected records.
+func DoUntil(quit context.Context, concurrency int, url string, timeout time.Duration) []Record {
 	// sem is a semaphore to constrain access to at most n concurrent threads.
 	sem := make(chan int, concurrency)
 	rec := make(chan Record)
@@ -87,7 +87,7 @@ func DoUntil(quit <-chan struct{}, concurrency int, url string, timeout time.Dur
 	go func() {
 		for {
 			select {
-			case <-quit:
+			case <-quit.Done():
 				wg.Wait()
 				close(rec)
 				return
