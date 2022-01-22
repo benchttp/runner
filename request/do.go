@@ -14,14 +14,15 @@ func doRequest(url string, timeout time.Duration) Record {
 		Timeout: timeout,
 	}
 
-	t0 := time.Now()
+	start := time.Now()
 
 	resp, err := client.Get(url)
+	end := time.Since(start)
 	if err != nil {
 		return Record{error: fmt.Sprint(err)}
 	}
 
-	return newRecord(resp, time.Since(t0))
+	return newRecord(resp, end)
 }
 
 // acquire acquires the semaphore with a weight of 1, blocking until
