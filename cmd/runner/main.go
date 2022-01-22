@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -47,19 +48,14 @@ func parseArgs() {
 func main() {
 	parseArgs()
 
-	quit := make(chan struct{}, 1)
-	defer close(quit)
-
-	go func() {
-		<-time.NewTimer(duration).C
-		quit <- struct{}{}
-	}()
+	ctx, cancel := context.WithTimeout(context.Background(), duration)
+	defer cancel()
 
 	var rec <-chan request.Record
 	if requests > 0 {
-		rec = request.Do(requests, quit, concurrency, url, timeout)
+		rec = request.Do(requests, ctx.Done(), concurrency, url, timeout)
 	} else {
-		rec = request.DoUntil(quit, concurrency, url, timeout)
+		rec = request.DoUntil(ctx.Done(), concurrency, url, timeout)
 	}
 
 	reports := report.Collect(rec)
