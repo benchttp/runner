@@ -45,7 +45,7 @@ func release(sem <-chan int, wg *sync.WaitGroup) {
 // The value of concurrency limits the number of concurrent threads.
 // Once all requests have been made or on done signal from ctx,
 // waits for goroutines to end and returns the collected records.
-func Do(ctx context.Context, requests int, concurrency int, url string, timeout time.Duration) []Record {
+func Do(ctx context.Context, requests, concurrency int, url string, timeout time.Duration) []Record {
 	// sem is a semaphore to constrain access to at most n concurrent threads.
 	sem := make(chan int, concurrency)
 	rec := make(chan Record, requests)
