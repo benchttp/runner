@@ -53,11 +53,13 @@ func Do(ctx context.Context, requests, concurrency int, url string, timeout time
 	var wg sync.WaitGroup
 
 	go func() {
+		defer func() {
+			wg.Wait()
+			close(rec)
+		}()
 		for i := 0; i < requests; i++ {
 			select {
 			case <-ctx.Done():
-				wg.Wait()
-				close(rec)
 				return
 			default:
 			}
