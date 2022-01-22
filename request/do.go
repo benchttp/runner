@@ -52,21 +52,23 @@ func Do(requests int, quit <-chan struct{}, concurrency int, url string, timeout
 
 	var wg sync.WaitGroup
 
-	for i := 0; i < requests; i++ {
-		select {
-		case <-quit:
-			break
-		default:
+	go func() {
+		for i := 0; i < requests; i++ {
+			select {
+			case <-quit:
+				wg.Wait()
+				close(rec)
+				return
+			default:
+			}
+			acquire(sem, &wg)
+			go func() {
+				defer release(sem, &wg)
+				rec <- doRequest(url, timeout)
+			}()
 		}
-		acquire(sem, &wg)
-		go func() {
-			defer release(sem, &wg)
-			rec <- doRequest(url, timeout)
-		}()
-	}
+	}()
 
-	wg.Wait()
-	close(rec)
 	return rec
 }
 
@@ -88,6 +90,7 @@ func DoUntil(quit <-chan struct{}, concurrency int, url string, timeout time.Dur
 			case <-quit:
 				wg.Wait()
 				close(rec)
+				return
 			default:
 			}
 			acquire(sem, &wg)
