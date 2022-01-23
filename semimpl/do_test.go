@@ -110,17 +110,13 @@ func TestDo(t *testing.T) {
 		groups := groupby(durations, numWorkers)
 		for groupIndex, group := range groups {
 			// check durations within each group are similar
-			for i, v := range group {
-				if i == len(group)-1 {
-					break
-				}
-				if interval := group[i+1] - v; interval > maxIntervalWithinGroup {
-					t.Errorf(
-						"unexpected interval in group: exp < %dms, got %dms",
-						maxIntervalWithinGroup.Milliseconds(), interval.Milliseconds(),
-					)
-					t.Log(durations)
-				}
+			hi, lo := maxof(group), minof(group)
+			if interval := hi - lo; interval > maxIntervalWithinGroup {
+				t.Errorf(
+					"unexpected interval in group: exp < %dms, got %dms",
+					maxIntervalWithinGroup.Milliseconds(), interval.Milliseconds(),
+				)
+				t.Log(durations)
 			}
 
 			// check durations between distinct groups are spaced
@@ -157,7 +153,7 @@ func groupby(src []time.Duration, by int) [][]time.Duration {
 func minof(src []time.Duration) time.Duration {
 	var min time.Duration
 	for _, d := range src {
-		if d < min {
+		if d < min || min == 0 {
 			min = d
 		}
 	}
