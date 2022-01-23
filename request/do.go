@@ -2,13 +2,14 @@ package request
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/benchttp/runner/record"
 )
 
-func doRequest(url string, timeout time.Duration) Record {
+func doRequest(url string, timeout time.Duration) record.Record {
 	client := http.Client{
 		// Timeout includes connection time, any redirects, and reading the response body.
 		// We may want exclude reading the response body in our benchmark tool.
@@ -20,10 +21,10 @@ func doRequest(url string, timeout time.Duration) Record {
 	resp, err := client.Get(url)
 	end := time.Since(start)
 	if err != nil {
-		return Record{error: fmt.Sprint(err)}
+		return record.Record{Error: err}
 	}
 
-	return newRecord(resp, end)
+	return record.New(resp, end)
 }
 
 // acquire acquires the semaphore with a weight of 1, blocking until
@@ -45,10 +46,10 @@ func release(sem <-chan int, wg *sync.WaitGroup) {
 // The value of concurrency limits the number of concurrent threads.
 // Once all requests have been made or on done signal from ctx,
 // waits for goroutines to end and returns the collected records.
-func Do(ctx context.Context, requests, concurrency int, url string, timeout time.Duration) []Record {
+func Do(ctx context.Context, requests, concurrency int, url string, timeout time.Duration) []record.Record {
 	// sem is a semaphore to constrain access to at most n concurrent threads.
 	sem := make(chan int, concurrency)
-	rec := make(chan Record, requests)
+	rec := make(chan record.Record, requests)
 
 	var wg sync.WaitGroup
 
@@ -79,10 +80,10 @@ func Do(ctx context.Context, requests, concurrency int, url string, timeout time
 // The value of concurrency limits the number of concurrent threads.
 // On done signal from ctx, waits for goroutines to end and returns
 // the collected records.
-func DoUntil(quit context.Context, concurrency int, url string, timeout time.Duration) []Record {
+func DoUntil(quit context.Context, concurrency int, url string, timeout time.Duration) []record.Record {
 	// sem is a semaphore to constrain access to at most n concurrent threads.
 	sem := make(chan int, concurrency)
-	rec := make(chan Record)
+	rec := make(chan record.Record)
 
 	var wg sync.WaitGroup
 
