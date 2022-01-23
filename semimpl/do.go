@@ -11,7 +11,7 @@ import (
 
 // Do concurrently executes callback at most maxIter times or until ctx is done
 // or canceled. Concurrency is handled leveraging the semaphore pattern, which
-// ensures at most numWorkers goroutines are spawned at se same time.
+// ensures at most numWorkers goroutines are spawned at the same time.
 func Do(ctx context.Context, numWorkers, maxIter int, callback func()) {
 	numWorkers = sanitizeNumWorkers(numWorkers)
 	maxIter = sanitizeMaxIter(maxIter)
