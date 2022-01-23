@@ -18,7 +18,7 @@ func doRequest(url string, timeout time.Duration) record.Record {
 
 	start := time.Now()
 
-	resp, err := client.Get(url)
+	resp, err := client.Get(url) //nolint:bodyclose
 	end := time.Since(start)
 	if err != nil {
 		return record.Record{Error: err}
