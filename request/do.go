@@ -68,6 +68,7 @@ func Do(ctx context.Context, requests, concurrency int, url string, timeout time
 				defer release(sem, &wg)
 				rec <- doRequest(url, timeout)
 			}()
+			wg.Wait()
 		}
 	}()
 
