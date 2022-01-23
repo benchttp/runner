@@ -2,6 +2,7 @@ package request
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -49,16 +50,13 @@ func release(sem <-chan int, wg *sync.WaitGroup) {
 func Do(ctx context.Context, requests, concurrency int, url string, timeout time.Duration) []record.Record {
 	// sem is a semaphore to constrain access to at most n concurrent threads.
 	sem := make(chan int, concurrency)
-	rec := make(chan record.Record, requests)
+	rec := record.NewSafeSlice(requests)
 
 	var wg sync.WaitGroup
 
-	go func() {
-		defer func() {
-			wg.Wait()
-			close(rec)
-		}()
+	func() {
 		for i := 0; i < requests; i++ {
+			fmt.Println(i) // TODO: delete temporary print
 			select {
 			case <-ctx.Done():
 				return
@@ -67,12 +65,13 @@ func Do(ctx context.Context, requests, concurrency int, url string, timeout time
 			acquire(sem, &wg)
 			go func() {
 				defer release(sem, &wg)
-				rec <- doRequest(url, timeout)
+				rec.Append(doRequest(url, timeout))
 			}()
 		}
 	}()
 
-	return collect(rec)
+	wg.Wait()
+	return rec.Slice()
 }
 
 // DoUntil launches a goroutine to ping url as soon as a thread is
@@ -80,29 +79,29 @@ func Do(ctx context.Context, requests, concurrency int, url string, timeout time
 // The value of concurrency limits the number of concurrent threads.
 // On done signal from ctx, waits for goroutines to end and returns
 // the collected records.
-func DoUntil(quit context.Context, concurrency int, url string, timeout time.Duration) []record.Record {
+func DoUntil(ctx context.Context, concurrency int, url string, timeout time.Duration) []record.Record {
 	// sem is a semaphore to constrain access to at most n concurrent threads.
 	sem := make(chan int, concurrency)
-	rec := make(chan record.Record)
+	rec := record.NewSafeSlice(0)
 
 	var wg sync.WaitGroup
 
-	go func() {
-		for {
+	func() {
+		for i := 0; ; i++ { // TODO: back to "for"
 			select {
-			case <-quit.Done():
-				wg.Wait()
-				close(rec)
+			case <-ctx.Done():
 				return
 			default:
 			}
 			acquire(sem, &wg)
+			fmt.Println(i) // TODO: delete temporary print
 			go func() {
 				defer release(sem, &wg)
-				rec <- doRequest(url, timeout)
+				rec.Append(doRequest(url, timeout))
 			}()
 		}
 	}()
 
-	return collect(rec)
+	wg.Wait()
+	return rec.Slice()
 }
