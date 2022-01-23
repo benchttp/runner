@@ -2,10 +2,14 @@ package request
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"golang.org/x/sync/semaphore"
 
 	"github.com/benchttp/runner/record"
 )
@@ -28,47 +32,34 @@ func doRequest(url string, timeout time.Duration) record.Record {
 	return record.New(resp, end)
 }
 
-// acquire acquires the semaphore with a weight of 1, blocking until
-// the ressource is free, and adds 1 to the WaitGroup counter.
-func acquire(sem chan<- int, wg *sync.WaitGroup) {
-	sem <- 1
-	wg.Add(1)
-}
-
-// release releases the semaphore with a weight of 1, freeing the ressource
-// for other actors, and decrements the WaitGroup counter by 1.
-func release(sem <-chan int, wg *sync.WaitGroup) {
-	<-sem
-	wg.Done()
-}
-
 // Do launches a goroutine to ping url as soon as a thread is
 // available and collects the results as they come in.
 // The value of concurrency limits the number of concurrent threads.
 // Once all requests have been made or on done signal from ctx,
 // waits for goroutines to end and returns the collected records.
 func Do(ctx context.Context, requests, concurrency int, url string, timeout time.Duration) []record.Record {
-	// sem is a semaphore to constrain access to at most n concurrent threads.
-	sem := make(chan int, concurrency)
+	sem := semaphore.NewWeighted(int64(concurrency))
 	rec := record.NewSafeSlice(requests)
+	wg := sync.WaitGroup{}
 
-	var wg sync.WaitGroup
+	for i := 0; i < requests; i++ {
+		fmt.Println(i) // TODO: delete temporary print
+		wg.Add(1)
 
-	func() {
-		for i := 0; i < requests; i++ {
-			fmt.Println(i) // TODO: delete temporary print
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-			acquire(sem, &wg)
-			go func() {
-				defer release(sem, &wg)
-				rec.Append(doRequest(url, timeout))
-			}()
+		if err := sem.Acquire(ctx, 1); err != nil {
+			handleContextError(err)
+			wg.Done()
+			break
 		}
-	}()
+
+		go func() {
+			defer func() {
+				sem.Release(1)
+				wg.Done()
+			}()
+			rec.Append(doRequest(url, timeout))
+		}()
+	}
 
 	wg.Wait()
 	return rec.Slice()
@@ -81,27 +72,41 @@ func Do(ctx context.Context, requests, concurrency int, url string, timeout time
 // the collected records.
 func DoUntil(ctx context.Context, concurrency int, url string, timeout time.Duration) []record.Record {
 	// sem is a semaphore to constrain access to at most n concurrent threads.
-	sem := make(chan int, concurrency)
+	sem := semaphore.NewWeighted(int64(concurrency))
 	rec := record.NewSafeSlice(0)
+	wg := sync.WaitGroup{}
 
-	var wg sync.WaitGroup
+	for i := 0; ; i++ { // TODO: back to "for"
+		fmt.Println(i) // TODO: delete temporary print
+		wg.Add(1)
 
-	func() {
-		for i := 0; ; i++ { // TODO: back to "for"
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-			acquire(sem, &wg)
-			fmt.Println(i) // TODO: delete temporary print
-			go func() {
-				defer release(sem, &wg)
-				rec.Append(doRequest(url, timeout))
-			}()
+		if err := sem.Acquire(ctx, 1); err != nil {
+			handleContextError(err)
+			wg.Done()
+			break
 		}
-	}()
+
+		go func() {
+			defer func() {
+				sem.Release(1)
+				wg.Done()
+			}()
+			rec.Append(doRequest(url, timeout))
+		}()
+	}
 
 	wg.Wait()
 	return rec.Slice()
+}
+
+func handleContextError(err error) {
+	switch {
+	case err == nil:
+	case errors.Is(err, context.DeadlineExceeded):
+		fmt.Println("timeout") // TODO: remove print
+	case errors.Is(err, context.Canceled):
+		fmt.Println("cancel") // TODO: remove print
+	default:
+		log.Fatal(err)
+	}
 }
