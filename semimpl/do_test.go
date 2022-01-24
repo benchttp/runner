@@ -9,7 +9,7 @@ import (
 )
 
 func TestDo(t *testing.T) {
-	t.Run("stop until maxIter is reached", func(t *testing.T) {
+	t.Run("stop when maxIter is reached", func(t *testing.T) {
 		var (
 			numWorkers = 1
 			gotIter    = 0
