@@ -159,7 +159,7 @@ func TestDo(t *testing.T) {
 			if groupIndex == len(groups)-1 {
 				break
 			}
-			curr, next := maxof(group), minof(groups[groupIndex+1])
+			curr, next := minof(group), minof(groups[groupIndex+1])
 			if interval := next - curr; interval < minIntervalBetweenGroups {
 				t.Errorf(
 					"unexpected interval between groups: exp > %dms, got %dms",
