@@ -2,8 +2,6 @@ package semimpl
 
 import (
 	"context"
-	"errors"
-	"log"
 	"sync"
 
 	"golang.org/x/sync/semaphore"
@@ -24,7 +22,8 @@ func Do(ctx context.Context, numWorkers, maxIter int, callback func()) {
 		wg.Add(1)
 
 		if err := sem.Acquire(ctx, 1); err != nil {
-			handleContextError(err)
+			// err is either context.DeadlineExceeded or context.Canceled
+			// which are expected values so we stop the process silently.
 			wg.Done()
 			break
 		}
@@ -60,14 +59,4 @@ func sanitizeCallback(callback func()) func() {
 		return func() {}
 	}
 	return callback
-}
-
-func handleContextError(err error) {
-	switch {
-	case err == nil:
-	case errors.Is(err, context.DeadlineExceeded):
-	case errors.Is(err, context.Canceled):
-	default:
-		log.Fatal(err)
-	}
 }
