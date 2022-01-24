@@ -2,6 +2,7 @@ package semimpl_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -10,12 +11,13 @@ import (
 
 func TestDo(t *testing.T) {
 	t.Run("stop when maxIter is reached", func(t *testing.T) {
-		var (
+		const (
 			numWorkers = 1
-			gotIter    = 0
 			maxIter    = 10
 			expIter    = 10
 		)
+
+		gotIter := 0
 
 		semimpl.Do(context.Background(), numWorkers, maxIter, func() {
 			gotIter++
@@ -27,14 +29,18 @@ func TestDo(t *testing.T) {
 	})
 
 	t.Run("stop on context timeout", func(t *testing.T) {
-		var (
-			timeout    = 50 * time.Millisecond
-			interval   = timeout / 5
+		const (
+			timeout    = 100 * time.Millisecond
+			interval   = timeout / 10
 			numWorkers = 1
-			maxIter    = 0 // infinite iterations
 
-			margin      = 15 * time.Millisecond
+			margin      = 25 * time.Millisecond // determined empirically
 			maxDuration = timeout + margin
+		)
+
+		var (
+			maxIter = int(interval.Milliseconds()) + 1 // should not be reached
+			gotIter = 0
 		)
 
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -42,6 +48,7 @@ func TestDo(t *testing.T) {
 
 		gotDuration := timeFunc(func() {
 			semimpl.Do(ctx, numWorkers, maxIter, func() {
+				gotIter++
 				time.Sleep(interval)
 			})
 		})
@@ -52,17 +59,28 @@ func TestDo(t *testing.T) {
 				maxDuration.Milliseconds(), gotDuration.Milliseconds(),
 			)
 		}
+
+		if gotIter >= maxIter {
+			t.Errorf(
+				"context timeout iterations: exp < %d, got %d",
+				maxIter, gotIter,
+			)
+		}
 	})
 
 	t.Run("stop on context cancel", func(t *testing.T) {
-		var (
-			timeout    = 50 * time.Millisecond
-			interval   = 10 * time.Millisecond
+		const (
+			timeout    = 100 * time.Millisecond
+			interval   = timeout / 10
 			numWorkers = 1
-			maxIter    = 0 // infinite iterations
 
-			margin      = 15 * time.Millisecond
+			margin      = 25 * time.Millisecond // determined empirically
 			maxDuration = timeout + margin
+		)
+
+		var (
+			maxIter = int(interval.Milliseconds()) + 1 // should not be reached
+			gotIter = 0
 		)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -83,53 +101,71 @@ func TestDo(t *testing.T) {
 				maxDuration.Milliseconds(), gotDuration.Milliseconds(),
 			)
 		}
+
+		if gotIter >= maxIter {
+			t.Errorf(
+				"context timeout iterations: exp < %d, got %d",
+				maxIter, gotIter,
+			)
+		}
 	})
 
 	t.Run("limit concurrent workers", func(t *testing.T) {
-		var (
+		const (
 			numWorkers = 3
 			maxIter    = 12
 
-			durations                = make([]time.Duration, 0, maxIter)
-			maxIntervalWithinGroup   = 10 * time.Millisecond
 			minIntervalBetweenGroups = 30 * time.Millisecond
+			maxIntervalWithinGroup   = 10 * time.Millisecond
+		)
+
+		var (
+			// elapsedTimes is a slice of durations corresponding to the
+			// intervals between the call to semimpl.Do and each callback.
+			elapsedTimes = make([]time.Duration, 0, maxIter)
+			mu           sync.Mutex
 		)
 
 		start := time.Now()
 		semimpl.Do(context.Background(), numWorkers, maxIter, func() {
-			durations = append(durations, time.Since(start))
+			mu.Lock()
+			elapsedTimes = append(elapsedTimes, time.Since(start))
+			mu.Unlock()
 			time.Sleep(minIntervalBetweenGroups)
 		})
 
-		// check duration slice is coherent, grouping its values
+		// check elapsedTimes slice is coherent, grouping its values
 		// by expectedly similar durations, e.g.:
 		// 12 iterations / 3 workers -> 4 groups of 3 similar durations.
-		// With a callback duration of 30ms, we can expect something like:
+		// With a callback duration of 30ms, we can expect such grouping:
 		// [[0ms, 0ms, 0ms], [30ms, 30ms, 30ms], [60ms, 60ms, 60ms], [90ms, 90ms, 90ms]]
 		// with a certain delta.
-		groups := groupby(durations, numWorkers)
+		// We check the resulting grouping against 2 rules:
+		// 	1. durations within a same group must be close
+		// 	2. max interval between two groups must be higher than the callback duration
+		groups := groupby(elapsedTimes, numWorkers)
 		for groupIndex, group := range groups {
-			// check durations within each group are similar
+			// 1. check durations within each group are similar
 			hi, lo := maxof(group), minof(group)
 			if interval := hi - lo; interval > maxIntervalWithinGroup {
 				t.Errorf(
 					"unexpected interval in group: exp < %dms, got %dms",
 					maxIntervalWithinGroup.Milliseconds(), interval.Milliseconds(),
 				)
-				t.Log(durations)
+				t.Log(elapsedTimes)
 			}
 
 			// check durations between distinct groups are spaced
 			if groupIndex == len(groups)-1 {
 				break
 			}
-			curr, next := minof(group), maxof(groups[groupIndex+1])
+			curr, next := maxof(group), minof(groups[groupIndex+1])
 			if interval := next - curr; interval < minIntervalBetweenGroups {
 				t.Errorf(
 					"unexpected interval between groups: exp > %dms, got %dms",
 					minIntervalBetweenGroups.Milliseconds(), interval.Milliseconds(),
 				)
-				t.Log(durations)
+				t.Log(elapsedTimes)
 			}
 		}
 	})
