@@ -2,6 +2,7 @@ package semimpl_test
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -112,6 +113,35 @@ func TestDo(t *testing.T) {
 
 	t.Run("limit concurrent workers", func(t *testing.T) {
 		const (
+			interval   = 10 * time.Millisecond
+			numWorkers = 10
+			maxIter    = 100
+		)
+
+		var (
+			mu               sync.Mutex
+			baseNumGoroutine = runtime.NumGoroutine()
+			gotNumGoroutines = make([]int, 0, maxIter)
+		)
+
+		semimpl.Do(context.Background(), numWorkers, maxIter, func() {
+			mu.Lock()
+			gotNumGoroutines = append(gotNumGoroutines, runtime.NumGoroutine()-baseNumGoroutine)
+			mu.Unlock()
+			time.Sleep(interval)
+		})
+
+		for _, gotNumGoroutine := range gotNumGoroutines {
+			if gotNumGoroutine > numWorkers {
+				t.Errorf("max concurrent workers: exp <= %d, got %d", numWorkers, gotNumGoroutine)
+			}
+		}
+
+		t.Log(gotNumGoroutines)
+	})
+
+	t.Run("dispatch concurrent workers correctly", func(t *testing.T) {
+		const (
 			numWorkers = 3
 			maxIter    = 12
 
@@ -152,7 +182,6 @@ func TestDo(t *testing.T) {
 					"unexpected interval in group: exp < %dms, got %dms",
 					maxIntervalWithinGroup.Milliseconds(), interval.Milliseconds(),
 				)
-				t.Log(elapsedTimes)
 			}
 
 			// check durations between distinct groups are spaced
@@ -165,9 +194,10 @@ func TestDo(t *testing.T) {
 					"unexpected interval between groups: exp > %dms, got %dms",
 					minIntervalBetweenGroups.Milliseconds(), interval.Milliseconds(),
 				)
-				t.Log(elapsedTimes)
 			}
 		}
+
+		t.Log(elapsedTimes)
 	})
 }
 
