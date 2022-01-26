@@ -2,22 +2,30 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
+	"github.com/benchttp/runner/config"
+	"github.com/benchttp/runner/configparser"
 	"github.com/benchttp/runner/request"
 )
 
 const (
+	DefaultConfigFile  = "./.benchttp.yml"
+	DefaultURL         = ""
 	DefaultConcurrency = 1
 	DefaultRequests    = 0 // Use duration as exit condition if omitted.
 	DefaultDuration    = 60 * time.Second
 	DefaultTimeout     = 10 * time.Second
 )
 
+// TODO: rethink defaulting process
 var (
+	configFile  string
 	url         string
 	concurrency int           // Number of connections to run concurrently
 	requests    int           // Number of requests to run, use duration as exit condition if omitted.
@@ -26,8 +34,8 @@ var (
 )
 
 func parseArgs() {
-	url = os.Args[len(os.Args)-1]
-
+	flag.StringVar(&configFile, "config-file", DefaultConfigFile, "Config file path")
+	flag.StringVar(&url, "url", DefaultURL, "Target URL to request")
 	flag.IntVar(&concurrency, "c", DefaultConcurrency, "Number of connections to run concurrently")
 	flag.IntVar(&requests, "r", DefaultRequests, "Number of requests to run, use duration as exit condition if omitted")
 	flag.DurationVar(&duration, "d", DefaultDuration, "Duration of test")
@@ -37,23 +45,35 @@ func parseArgs() {
 
 func main() {
 	parseArgs()
-	printConfig()
 
+	cfg := makeRunnerConfig()
+	fmt.Println(cfg)
+
+	// TODO: delay timeout creation
 	ctx, cancel := context.WithTimeout(context.Background(), duration)
 	defer cancel()
 
-	rec := request.Do(ctx, requests, concurrency, url, timeout)
+	// TODO: accept a config.Config struct
+	rec := request.Do(ctx,
+		cfg.RunnerOptions.Requests,
+		cfg.RunnerOptions.Concurrency,
+		cfg.Request.URL.String(),
+		cfg.RunnerOptions.RequestTimeout,
+	)
 
 	fmt.Println("total:", len(rec))
 }
 
-func printConfig() {
-	fmt.Printf("Testing url: %s\n", url)
-	fmt.Printf("concurrency: %d\n", concurrency)
-	if requests > 0 {
-		fmt.Printf("requests: %d\n", requests)
+func makeRunnerConfig() config.Config {
+	fileConfig, err := configparser.Parse(configFile)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		// config file is not mandatory, other errors are critical
+		log.Fatal(err)
 	}
-	fmt.Printf("duration: %s\n", duration)
 
-	println()
+	cliConfig := config.New(url, requests, concurrency, timeout, duration)
+
+	cfg := config.Merge(fileConfig, cliConfig)
+
+	return cfg
 }

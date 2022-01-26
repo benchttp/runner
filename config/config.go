@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
+	"reflect"
 	"time"
 )
 
@@ -32,11 +33,40 @@ func (cfg Config) String() string {
 	return string(b)
 }
 
+// New returns a Config initialized with given parameters.
+func New(uri string, requests, concurrency int, requestTimeout, globalTimeout time.Duration) Config {
+	var cfg Config
+	cfg.Request.URL, _ = url.Parse(uri) // TODO: error handling
+	cfg.RunnerOptions.Requests = requests
+	cfg.RunnerOptions.Concurrency = concurrency
+	cfg.RunnerOptions.GlobalTimeout = globalTimeout
+	cfg.RunnerOptions.RequestTimeout = requestTimeout
+	return cfg
+}
+
 // Merge returns a zero Config.
 //
 // Once implemented, Merge will apply an override Config over a base Config.
 func Merge(base, override Config) Config {
-	return Config{}
+	if override.Request.Method != "" {
+		base.Request.Method = override.Request.Method
+	}
+	if reflect.ValueOf(override.Request.URL).IsZero() {
+		base.Request.URL = override.Request.URL
+	}
+	if override.RunnerOptions.Requests != 0 {
+		base.RunnerOptions.Requests = override.RunnerOptions.Requests
+	}
+	if override.RunnerOptions.Concurrency != 0 {
+		base.RunnerOptions.Concurrency = override.RunnerOptions.Concurrency
+	}
+	if override.RunnerOptions.GlobalTimeout != 0 {
+		base.RunnerOptions.GlobalTimeout = override.RunnerOptions.GlobalTimeout
+	}
+	if override.RunnerOptions.RequestTimeout != 0 {
+		base.RunnerOptions.RequestTimeout = override.RunnerOptions.RequestTimeout
+	}
+	return base
 }
 
 // Validate returns an unimplemented error.
