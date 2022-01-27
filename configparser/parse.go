@@ -49,7 +49,7 @@ func parseRawConfig(in rawConfig) (cfg config.Config, err error) {
 		return
 	}
 
-	return config.Config{
+	return config.Merge(config.Default(), config.Config{
 		Request: config.Request{
 			Method:  in.Request.Method,
 			URL:     parsedURL,
@@ -60,7 +60,7 @@ func parseRawConfig(in rawConfig) (cfg config.Config, err error) {
 			Concurrency:   in.RunnerOptions.Concurrency,
 			GlobalTimeout: parsedGlobalTimeout,
 		},
-	}, nil
+	}), nil
 }
 
 // parseAndBuildURL parses a raw string as a *url.URL and adds any extra

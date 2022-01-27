@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
-	"reflect"
 	"time"
 )
 
@@ -36,7 +35,7 @@ func (cfg Config) String() string {
 	return string(b)
 }
 
-// New returns a Config initialized with given parameters.
+// New returns a default Config overridden with given parameters.
 func New(uri string, requests, concurrency int, requestTimeout, globalTimeout time.Duration) Config {
 	cfg := Config{
 		Request: Request{
@@ -49,17 +48,21 @@ func New(uri string, requests, concurrency int, requestTimeout, globalTimeout ti
 		},
 	}
 	cfg.Request.URL, _ = url.Parse(uri) // TODO: error handling
-	return cfg
+	return Merge(Default(), cfg)
 }
 
-// Merge returns a zero Config.
-//
-// Once implemented, Merge will apply an override Config over a base Config.
+// Default returns a default config that is safe to use.
+func Default() Config {
+	return defaultConfig
+}
+
+// Merge returns a Config after a base Config overridden by all non-zero values
+// of override.
 func Merge(base, override Config) Config {
 	if override.Request.Method != "" {
 		base.Request.Method = override.Request.Method
 	}
-	if reflect.ValueOf(override.Request.URL).IsZero() {
+	if override.Request.URL.String() != "" {
 		base.Request.URL = override.Request.URL
 	}
 	if override.Request.Timeout != 0 {

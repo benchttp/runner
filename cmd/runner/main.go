@@ -14,16 +14,8 @@ import (
 	"github.com/benchttp/runner/request"
 )
 
-const (
-	DefaultConfigFile  = "./.benchttp.yml"
-	DefaultURL         = ""
-	DefaultConcurrency = 1
-	DefaultRequests    = 0 // Use duration as exit condition if omitted.
-	DefaultDuration    = 60 * time.Second
-	DefaultTimeout     = 10 * time.Second
-)
+const defaultConfigFile = "./.benchttp.yml"
 
-// TODO: rethink defaulting process
 var (
 	configFile  string
 	url         string
@@ -34,12 +26,12 @@ var (
 )
 
 func parseArgs() {
-	flag.StringVar(&configFile, "config-file", DefaultConfigFile, "Config file path")
-	flag.StringVar(&url, "url", DefaultURL, "Target URL to request")
-	flag.IntVar(&concurrency, "c", DefaultConcurrency, "Number of connections to run concurrently")
-	flag.IntVar(&requests, "r", DefaultRequests, "Number of requests to run, use duration as exit condition if omitted")
-	flag.DurationVar(&duration, "d", DefaultDuration, "Duration of test")
-	flag.DurationVar(&timeout, "t", DefaultTimeout, "Timeout for each http request")
+	flag.StringVar(&configFile, "config-file", defaultConfigFile, "Config file path")
+	flag.StringVar(&url, "url", "", "Target URL to request")
+	flag.IntVar(&concurrency, "c", 0, "Number of connections to run concurrently")
+	flag.IntVar(&requests, "r", 0, "Number of requests to run, use duration as exit condition if omitted")
+	flag.DurationVar(&duration, "d", 0, "Duration of test")
+	flag.DurationVar(&timeout, "t", 0, "Timeout for each http request")
 	flag.Parse()
 }
 
@@ -50,10 +42,9 @@ func main() {
 	fmt.Println(cfg)
 
 	// TODO: delay timeout creation
-	ctx, cancel := context.WithTimeout(context.Background(), duration)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.RunnerOptions.GlobalTimeout)
 	defer cancel()
 
-	// TODO: accept a config.Config struct
 	rec := request.Do(ctx, cfg)
 
 	fmt.Println("total:", len(rec))

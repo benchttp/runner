@@ -34,10 +34,17 @@ func doRequest(url string, timeout time.Duration) record.Record {
 // Once all requests have been made or on done signal from ctx,
 // waits for goroutines to end and returns the collected records.
 func Do(ctx context.Context, cfg config.Config) []record.Record {
-	records := record.NewSafeSlice(cfg.RunnerOptions.Requests)
+	var (
+		uri        = cfg.Request.URL.String()
+		numWorker  = cfg.RunnerOptions.Concurrency
+		numRequest = cfg.RunnerOptions.Requests
+		reqTimeout = cfg.Request.Timeout
+	)
 
-	semimpl.Do(ctx, cfg.RunnerOptions.Concurrency, cfg.RunnerOptions.Requests, func() {
-		records.Append(doRequest(cfg.Request.URL.String(), cfg.Request.Timeout))
+	records := record.NewSafeSlice(numRequest)
+
+	semimpl.Do(ctx, numWorker, numRequest, func() {
+		records.Append(doRequest(uri, reqTimeout))
 	})
 
 	return records.Slice()
