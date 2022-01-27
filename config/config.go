@@ -11,22 +11,27 @@ import (
 // ErrInvalid error is returned in the case of an invalid config.
 var ErrInvalid = errors.New("invalid config")
 
-// Config represents the configuration of the runner.
-type Config struct {
-	Request struct {
-		Method string
-		URL    *url.URL
-	}
-
-	RunnerOptions struct {
-		Requests       int
-		Concurrency    int
-		GlobalTimeout  time.Duration
-		RequestTimeout time.Duration
-	}
+type Request struct {
+	Method string
+	URL    *url.URL
+	// TODO:
+	// Timeout time.Duration
 }
 
-// String returns an indented JSON representations of Config
+type RunnerOptions struct {
+	Requests       int
+	Concurrency    int
+	GlobalTimeout  time.Duration
+	RequestTimeout time.Duration // TODO: move to Config.Request
+}
+
+// Config represents the configuration of the runner.
+type Config struct {
+	Request       Request
+	RunnerOptions RunnerOptions
+}
+
+// String returns an indented JSON representation of Config
 // for debugging purposes.
 func (cfg Config) String() string {
 	b, _ := json.MarshalIndent(cfg, "", "  ")
@@ -35,12 +40,15 @@ func (cfg Config) String() string {
 
 // New returns a Config initialized with given parameters.
 func New(uri string, requests, concurrency int, requestTimeout, globalTimeout time.Duration) Config {
-	var cfg Config
+	cfg := Config{
+		RunnerOptions: RunnerOptions{
+			Requests:       requests,
+			Concurrency:    concurrency,
+			GlobalTimeout:  globalTimeout,
+			RequestTimeout: requestTimeout,
+		},
+	}
 	cfg.Request.URL, _ = url.Parse(uri) // TODO: error handling
-	cfg.RunnerOptions.Requests = requests
-	cfg.RunnerOptions.Concurrency = concurrency
-	cfg.RunnerOptions.GlobalTimeout = globalTimeout
-	cfg.RunnerOptions.RequestTimeout = requestTimeout
 	return cfg
 }
 

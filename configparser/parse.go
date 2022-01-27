@@ -11,24 +11,24 @@ import (
 
 // Parse parses a benchttp runner config file into a config.Config
 // and returns it or the first non-nil error occurring in the process.
-func Parse(cfgpath string) (config.Config, error) {
+func Parse(cfgpath string) (cfg config.Config, err error) {
 	b, err := os.ReadFile(cfgpath)
 	if err != nil {
-		return config.Config{}, err
+		return
 	}
 
 	ext := extension(path.Ext(cfgpath))
 	parser, err := newParser(ext)
 	if err != nil {
-		return config.Config{}, err
+		return
 	}
 
-	var cfg rawConfig
-	if err := parser.ParseConfig(b, &cfg); err != nil {
-		return config.Config{}, err
+	var rawCfg rawConfig
+	if err = parser.ParseConfig(b, &rawCfg); err != nil {
+		return
 	}
 
-	return parseRawConfig(cfg)
+	return parseRawConfig(rawCfg)
 }
 
 // parseRawConfig parses an input raw config as a config.Config and returns it
@@ -49,14 +49,18 @@ func parseRawConfig(in rawConfig) (cfg config.Config, err error) {
 		return
 	}
 
-	cfg.Request.Method = in.Request.Method
-	cfg.Request.URL = parsedURL
-	cfg.RunnerOptions.Requests = in.RunnerOptions.Requests
-	cfg.RunnerOptions.Concurrency = in.RunnerOptions.Concurrency
-	cfg.RunnerOptions.GlobalTimeout = parsedGlobalTimeout
-	cfg.RunnerOptions.RequestTimeout = parsedRequestTimeout
-
-	return
+	return config.Config{
+		Request: config.Request{
+			Method: in.Request.Method,
+			URL:    parsedURL,
+		},
+		RunnerOptions: config.RunnerOptions{
+			Requests:       in.RunnerOptions.Requests,
+			Concurrency:    in.RunnerOptions.Concurrency,
+			GlobalTimeout:  parsedGlobalTimeout,
+			RequestTimeout: parsedRequestTimeout,
+		},
+	}, nil
 }
 
 // parseAndBuildURL parses a raw string as a *url.URL and adds any extra
