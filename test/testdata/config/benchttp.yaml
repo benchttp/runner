@@ -7,9 +7,9 @@ request:
   <<: *defaults
   queryParams:
     fib: 30
+  timeout: 2s
 
 runnerOptions:
   requests: 100
   concurrency: 1
   globalTimeout: 60s
-  requestTimeout: 2s

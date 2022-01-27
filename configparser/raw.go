@@ -9,12 +9,12 @@ type rawConfig struct {
 		Method      string            `yaml:"method" json:"method"`
 		URL         string            `yaml:"url" json:"url"`
 		QueryParams map[string]string `yaml:"queryParams" json:"queryParams"`
+		Timeout     string            `yaml:"timeout" json:"timeout"`
 	} `yaml:"request" json:"request"`
 
 	RunnerOptions struct {
-		Requests       int    `yaml:"requests" json:"requests"`
-		Concurrency    int    `yaml:"concurrency" json:"concurrency"`
-		GlobalTimeout  string `yaml:"globalTimeout" json:"globalTimeout"`
-		RequestTimeout string `yaml:"requestTimeout" json:"requestTimeout"`
+		Requests      int    `yaml:"requests" json:"requests"`
+		Concurrency   int    `yaml:"concurrency" json:"concurrency"`
+		GlobalTimeout string `yaml:"globalTimeout" json:"globalTimeout"`
 	} `yaml:"runnerOptions" json:"runnerOptions"`
 }

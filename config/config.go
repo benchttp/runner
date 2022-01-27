@@ -12,17 +12,15 @@ import (
 var ErrInvalid = errors.New("invalid config")
 
 type Request struct {
-	Method string
-	URL    *url.URL
-	// TODO:
-	// Timeout time.Duration
+	Method  string
+	URL     *url.URL
+	Timeout time.Duration
 }
 
 type RunnerOptions struct {
-	Requests       int
-	Concurrency    int
-	GlobalTimeout  time.Duration
-	RequestTimeout time.Duration // TODO: move to Config.Request
+	Requests      int
+	Concurrency   int
+	GlobalTimeout time.Duration
 }
 
 // Config represents the configuration of the runner.
@@ -41,11 +39,13 @@ func (cfg Config) String() string {
 // New returns a Config initialized with given parameters.
 func New(uri string, requests, concurrency int, requestTimeout, globalTimeout time.Duration) Config {
 	cfg := Config{
+		Request: Request{
+			Timeout: requestTimeout,
+		},
 		RunnerOptions: RunnerOptions{
-			Requests:       requests,
-			Concurrency:    concurrency,
-			GlobalTimeout:  globalTimeout,
-			RequestTimeout: requestTimeout,
+			Requests:      requests,
+			Concurrency:   concurrency,
+			GlobalTimeout: globalTimeout,
 		},
 	}
 	cfg.Request.URL, _ = url.Parse(uri) // TODO: error handling
@@ -62,6 +62,9 @@ func Merge(base, override Config) Config {
 	if reflect.ValueOf(override.Request.URL).IsZero() {
 		base.Request.URL = override.Request.URL
 	}
+	if override.Request.Timeout != 0 {
+		base.Request.Timeout = override.Request.Timeout
+	}
 	if override.RunnerOptions.Requests != 0 {
 		base.RunnerOptions.Requests = override.RunnerOptions.Requests
 	}
@@ -70,9 +73,6 @@ func Merge(base, override Config) Config {
 	}
 	if override.RunnerOptions.GlobalTimeout != 0 {
 		base.RunnerOptions.GlobalTimeout = override.RunnerOptions.GlobalTimeout
-	}
-	if override.RunnerOptions.RequestTimeout != 0 {
-		base.RunnerOptions.RequestTimeout = override.RunnerOptions.RequestTimeout
 	}
 	return base
 }

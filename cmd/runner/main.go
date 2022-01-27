@@ -58,7 +58,7 @@ func main() {
 		cfg.RunnerOptions.Requests,
 		cfg.RunnerOptions.Concurrency,
 		cfg.Request.URL.String(),
-		cfg.RunnerOptions.RequestTimeout,
+		cfg.Request.Timeout,
 	)
 
 	fmt.Println("total:", len(rec))

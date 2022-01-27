@@ -39,26 +39,26 @@ func parseRawConfig(in rawConfig) (cfg config.Config, err error) {
 		return
 	}
 
-	parsedGlobalTimeout, err := parseOptionalDuration(in.RunnerOptions.GlobalTimeout)
+	parsedRequestTimeout, err := parseOptionalDuration(in.Request.Timeout)
 	if err != nil {
 		return
 	}
 
-	parsedRequestTimeout, err := parseOptionalDuration(in.RunnerOptions.RequestTimeout)
+	parsedGlobalTimeout, err := parseOptionalDuration(in.RunnerOptions.GlobalTimeout)
 	if err != nil {
 		return
 	}
 
 	return config.Config{
 		Request: config.Request{
-			Method: in.Request.Method,
-			URL:    parsedURL,
+			Method:  in.Request.Method,
+			URL:     parsedURL,
+			Timeout: parsedRequestTimeout,
 		},
 		RunnerOptions: config.RunnerOptions{
-			Requests:       in.RunnerOptions.Requests,
-			Concurrency:    in.RunnerOptions.Concurrency,
-			GlobalTimeout:  parsedGlobalTimeout,
-			RequestTimeout: parsedRequestTimeout,
+			Requests:      in.RunnerOptions.Requests,
+			Concurrency:   in.RunnerOptions.Concurrency,
+			GlobalTimeout: parsedGlobalTimeout,
 		},
 	}, nil
 }

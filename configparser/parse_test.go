@@ -68,15 +68,15 @@ func newExpConfig() config.Config {
 	u, _ := url.Parse(testURL)
 	return config.Config{
 		Request: config.Request{
-			Method: "GET",
-			URL:    u,
+			Method:  "GET",
+			URL:     u,
+			Timeout: 2 * time.Second,
 		},
 
 		RunnerOptions: config.RunnerOptions{
-			Requests:       100,
-			Concurrency:    1,
-			GlobalTimeout:  60 * time.Second,
-			RequestTimeout: 2 * time.Second,
+			Requests:      100,
+			Concurrency:   1,
+			GlobalTimeout: 60 * time.Second,
 		},
 	}
 }
