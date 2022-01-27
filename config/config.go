@@ -7,9 +7,6 @@ import (
 	"time"
 )
 
-// ErrInvalid error is returned in the case of an invalid config.
-var ErrInvalid = errors.New("invalid config")
-
 type Request struct {
 	Method  string
 	URL     *url.URL
@@ -84,6 +81,8 @@ func Merge(base, override Config) Config {
 //
 // Once implemented, Validate will return ErrInvalid if any of its fields
 // does not meet the runner requirements.
+//
+// TODO: https://github.com/benchttp/runner/issues/20
 func Validate() error {
 	return errors.New("unimplemented")
 }

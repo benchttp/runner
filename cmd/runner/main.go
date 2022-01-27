@@ -49,6 +49,7 @@ func main() {
 	fmt.Println("total:", len(rec))
 }
 
+// makeRunnerConfig retrieves a config from
 func makeRunnerConfig() config.Config {
 	fileConfig, err := configparser.Parse(configFile)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
@@ -64,6 +65,7 @@ func makeRunnerConfig() config.Config {
 }
 
 // findFile returns the first name tham matches a file path.
+// If no match is found, it returns an empty string.
 func findFile(names []string) string {
 	for _, path := range names {
 		if _, err := os.Stat(path); err == nil { // err IS nil
