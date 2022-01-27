@@ -54,12 +54,7 @@ func main() {
 	defer cancel()
 
 	// TODO: accept a config.Config struct
-	rec := request.Do(ctx,
-		cfg.RunnerOptions.Requests,
-		cfg.RunnerOptions.Concurrency,
-		cfg.Request.URL.String(),
-		cfg.Request.Timeout,
-	)
+	rec := request.Do(ctx, cfg)
 
 	fmt.Println("total:", len(rec))
 }
