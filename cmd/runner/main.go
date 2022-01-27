@@ -13,8 +13,6 @@ import (
 	"github.com/benchttp/runner/request"
 )
 
-const defaultConfigFile = "./.benchttp.yml"
-
 var (
 	configFile  string
 	url         string
@@ -24,8 +22,14 @@ var (
 	timeout     time.Duration // Timeout for each http request
 )
 
+var defaultConfigFiles = []string{
+	"./.benchttp.yml",
+	"./.benchttp.yaml",
+	"./.benchttp.json",
+}
+
 func parseArgs() {
-	flag.StringVar(&configFile, "config-file", defaultConfigFile, "Config file path")
+	flag.StringVar(&configFile, "config-file", findFile(defaultConfigFiles), "Config file path")
 	flag.StringVar(&url, "url", "", "Target URL to request")
 	flag.IntVar(&concurrency, "c", 0, "Number of connections to run concurrently")
 	flag.IntVar(&requests, "r", 0, "Number of requests to run, use duration as exit condition if omitted")
@@ -57,4 +61,14 @@ func makeRunnerConfig() config.Config {
 	cfg := config.Merge(fileConfig, cliConfig)
 
 	return cfg
+}
+
+// findFile returns the first name tham matches a file path.
+func findFile(names []string) string {
+	for _, path := range names {
+		if _, err := os.Stat(path); err == nil { // err IS nil
+			return path
+		}
+	}
+	return ""
 }
