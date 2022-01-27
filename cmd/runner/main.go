@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -41,11 +40,7 @@ func main() {
 	cfg := makeRunnerConfig()
 	fmt.Println(cfg)
 
-	// TODO: delay timeout creation
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.RunnerOptions.GlobalTimeout)
-	defer cancel()
-
-	rec := request.Do(ctx, cfg)
+	rec := request.Do(cfg)
 
 	fmt.Println("total:", len(rec))
 }
