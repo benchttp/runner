@@ -14,12 +14,12 @@ import (
 )
 
 var (
-	configFile  string
-	url         string
-	concurrency int           // Number of connections to run concurrently
-	requests    int           // Number of requests to run, use duration as exit condition if omitted.
-	duration    time.Duration // Duration of test
-	timeout     time.Duration // Timeout for each http request
+	configFile    string
+	url           string
+	concurrency   int           // Number of connections to run concurrently
+	requests      int           // Number of requests to run, use duration as exit condition if omitted.
+	timeout       time.Duration // Timeout for each http request
+	globalTimeout time.Duration // Duration of test
 )
 
 var defaultConfigFiles = []string{
@@ -29,12 +29,12 @@ var defaultConfigFiles = []string{
 }
 
 func parseArgs() {
-	flag.StringVar(&configFile, "config-file", findFile(defaultConfigFiles), "Config file path")
+	flag.StringVar(&configFile, "configFile", findFile(defaultConfigFiles), "Config file path")
 	flag.StringVar(&url, "url", "", "Target URL to request")
-	flag.IntVar(&concurrency, "c", 0, "Number of connections to run concurrently")
-	flag.IntVar(&requests, "r", 0, "Number of requests to run, use duration as exit condition if omitted")
-	flag.DurationVar(&duration, "d", 0, "Duration of test")
-	flag.DurationVar(&timeout, "t", 0, "Timeout for each http request")
+	flag.IntVar(&concurrency, "concurrency", 0, "Number of connections to run concurrently")
+	flag.IntVar(&requests, "requests", 0, "Number of requests to run, use duration as exit condition if omitted")
+	flag.DurationVar(&timeout, "timeout", 0, "Timeout for each http request")
+	flag.DurationVar(&globalTimeout, "globalTimeout", 0, "Duration of test")
 	flag.Parse()
 }
 
@@ -57,7 +57,7 @@ func makeRunnerConfig() config.Config {
 		log.Fatal(err)
 	}
 
-	cliConfig := config.New(url, requests, concurrency, timeout, duration)
+	cliConfig := config.New(url, requests, concurrency, timeout, globalTimeout)
 
 	cfg := config.Merge(fileConfig, cliConfig)
 
