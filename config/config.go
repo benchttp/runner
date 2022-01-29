@@ -59,7 +59,8 @@ func Merge(base, override Config) Config {
 	if override.Request.Method != "" {
 		base.Request.Method = override.Request.Method
 	}
-	if override.Request.URL.String() != "" {
+	newURL := override.Request.URL
+	if newURL != nil && newURL.String() != "" {
 		base.Request.URL = override.Request.URL
 	}
 	if override.Request.Timeout != 0 {
