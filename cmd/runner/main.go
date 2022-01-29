@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/benchttp/runner/config"
-	"github.com/benchttp/runner/configfile"
+	configfile "github.com/benchttp/runner/config/file"
 	"github.com/benchttp/runner/request"
 )
 

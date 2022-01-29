@@ -45,7 +45,8 @@ func New(uri string, requests, concurrency int, requestTimeout, globalTimeout ti
 		},
 	}
 	cfg.Request.URL, _ = url.Parse(uri) // TODO: error handling
-	return Merge(Default(), cfg)
+
+	return MergeDefault(cfg)
 }
 
 // Default returns a default config that is safe to use.
@@ -89,6 +90,6 @@ func MergeDefault(override Config) Config {
 // does not meet the runner requirements.
 //
 // TODO: https://github.com/benchttp/runner/issues/20
-func Validate() error {
+func (cfg Config) Validate() error {
 	return errors.New("unimplemented")
 }

@@ -1,4 +1,4 @@
-package configfile_test
+package file_test
 
 import (
 	"net/url"
@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/benchttp/runner/config"
-	"github.com/benchttp/runner/configfile"
+	"github.com/benchttp/runner/config/file"
 )
 
 const (
-	testdataConfigPath = "../test/testdata/config"
+	testdataConfigPath = "../../test/testdata/config"
 	testURL            = "http://localhost:9999?fib=30&delay=200ms"
 )
 
@@ -29,7 +29,7 @@ func TestParse(t *testing.T) {
 			expCfg := newExpConfig()
 			fname := path.Join(testdataConfigPath, "benchttp"+ext)
 
-			gotCfg, err := configfile.Parse(fname)
+			gotCfg, err := file.Parse(fname)
 			if err != nil {
 				// critical error, stop the test
 				t.Fatal(err)
