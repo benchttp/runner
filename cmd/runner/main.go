@@ -59,9 +59,7 @@ func makeRunnerConfig() config.Config {
 
 	cliConfig := config.New(url, requests, concurrency, timeout, globalTimeout)
 
-	cfg := config.Merge(fileConfig, cliConfig)
-
-	return cfg
+	return config.Merge(fileConfig, cliConfig)
 }
 
 // findFile returns the first name tham matches a file path.

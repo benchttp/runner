@@ -78,6 +78,11 @@ func Merge(base, override Config) Config {
 	return base
 }
 
+// MergeDefault merges override with the default config calling Merge.
+func MergeDefault(override Config) Config {
+	return Merge(Default(), override)
+}
+
 // Validate returns an unimplemented error.
 //
 // Once implemented, Validate will return ErrInvalid if any of its fields

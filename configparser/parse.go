@@ -49,7 +49,7 @@ func parseRawConfig(in rawConfig) (cfg config.Config, err error) {
 		return
 	}
 
-	return config.Merge(config.Default(), config.Config{
+	return config.MergeDefault(config.Config{
 		Request: config.Request{
 			Method:  in.Request.Method,
 			URL:     parsedURL,
