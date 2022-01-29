@@ -1,4 +1,4 @@
-package configparser
+package configfile
 
 import (
 	"net/url"

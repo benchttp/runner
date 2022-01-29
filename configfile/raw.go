@@ -1,4 +1,4 @@
-package configparser
+package configfile
 
 // rawConfig is a raw data model for runner config files.
 // It serves as a receiver for unmarshaling processes and for that reason

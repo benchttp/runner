@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/benchttp/runner/config"
-	"github.com/benchttp/runner/configparser"
+	"github.com/benchttp/runner/configfile"
 	"github.com/benchttp/runner/request"
 )
 
@@ -29,7 +29,7 @@ var defaultConfigFiles = []string{
 }
 
 func parseArgs() {
-	flag.StringVar(&configFile, "configFile", findFile(defaultConfigFiles), "Config file path")
+	flag.StringVar(&configFile, "configFile", configfile.Find(defaultConfigFiles), "Config file path")
 	flag.StringVar(&url, "url", "", "Target URL to request")
 	flag.IntVar(&concurrency, "concurrency", 0, "Number of connections to run concurrently")
 	flag.IntVar(&requests, "requests", 0, "Number of requests to run, use duration as exit condition if omitted")
@@ -51,7 +51,7 @@ func main() {
 
 // makeRunnerConfig retrieves a config from
 func makeRunnerConfig() config.Config {
-	fileConfig, err := configparser.Parse(configFile)
+	fileConfig, err := configfile.Parse(configFile)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		// config file is not mandatory, other errors are critical
 		log.Fatal(err)
@@ -60,15 +60,4 @@ func makeRunnerConfig() config.Config {
 	cliConfig := config.New(url, requests, concurrency, timeout, globalTimeout)
 
 	return config.Merge(fileConfig, cliConfig)
-}
-
-// findFile returns the first name tham matches a file path.
-// If no match is found, it returns an empty string.
-func findFile(names []string) string {
-	for _, path := range names {
-		if _, err := os.Stat(path); err == nil { // err IS nil
-			return path
-		}
-	}
-	return ""
 }
