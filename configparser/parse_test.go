@@ -35,15 +35,12 @@ func TestParse(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			gotURL, expURL := gotCfg.Request.URL, expCfg.Request.URL
+			expURL, gotURL := expCfg.Request.URL, gotCfg.Request.URL
 
 			// compare *url.URLs separately, as they contain unpredictable values
 			// they need special checks
-			if !sameURL(gotCfg.Request.URL, expCfg.Request.URL) {
-				t.Errorf(
-					"unexpected parsed URL: exp %v, got %v",
-					expCfg.Request.URL, gotCfg.Request.URL,
-				)
+			if !sameURL(gotURL, expURL) {
+				t.Errorf("unexpected parsed URL: exp %v, got %v", expURL, gotURL)
 			}
 
 			// replace unpredictable values (undetermined query params order)
