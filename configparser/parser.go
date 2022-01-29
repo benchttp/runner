@@ -15,29 +15,21 @@ const (
 	extJSON extension = ".json"
 )
 
-type Parser interface {
-	ParseConfig([]byte, interface{}) error
+type configParser struct {
+	parseFunc func(in []byte, dst interface{}) error
 }
 
-type yamlParser struct{}
-
-func (yamlParser) ParseConfig(b []byte, dst interface{}) error {
-	return yaml.Unmarshal(b, dst)
+func (p configParser) parse(in []byte, dst interface{}) error {
+	return p.parseFunc(in, dst)
 }
 
-type jsonParser struct{}
-
-func (jsonParser) ParseConfig(b []byte, dst interface{}) error {
-	return json.Unmarshal(b, dst)
-}
-
-func newParser(ext extension) (Parser, error) {
+func newParser(ext extension) (configParser, error) {
 	switch ext {
 	case extYML, extYAML:
-		return yamlParser{}, nil
+		return configParser{parseFunc: yaml.Unmarshal}, nil
 	case extJSON:
-		return jsonParser{}, nil
+		return configParser{parseFunc: json.Unmarshal}, nil
 	default:
-		return nil, errors.New("unsupported config format")
+		return configParser{}, errors.New("unsupported config format")
 	}
 }

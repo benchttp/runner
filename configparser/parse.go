@@ -24,7 +24,7 @@ func Parse(cfgpath string) (cfg config.Config, err error) {
 	}
 
 	var rawCfg rawConfig
-	if err = parser.ParseConfig(b, &rawCfg); err != nil {
+	if err = parser.parse(b, &rawCfg); err != nil {
 		return
 	}
 
