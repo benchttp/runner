@@ -32,7 +32,7 @@ func (cfg Config) String() string {
 	return string(b)
 }
 
-// New returns a default Config overridden with given parameters.
+// New returns a Config initialized with given parameters.
 func New(uri string, requests, concurrency int, requestTimeout, globalTimeout time.Duration) Config {
 	var urlURL *url.URL
 	if uri != "" {
