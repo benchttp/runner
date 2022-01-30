@@ -1,7 +1,6 @@
-package record
+package request
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -15,10 +14,10 @@ type Record struct {
 	Error error
 }
 
-// New returns a Record that summarizes the given http response,
+// newRecord returns a Record that summarizes the given http response,
 // attaching the duration and a non-nil error if any occurs
 // in the reading process.
-func New(resp *http.Response, t time.Duration) Record {
+func newRecord(resp *http.Response, t time.Duration) Record {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 
@@ -33,9 +32,4 @@ func New(resp *http.Response, t time.Duration) Record {
 	}
 
 	return r
-}
-
-// String prints the Record{}.Cost. It's a temporary implementation.
-func (r Record) String() string {
-	return fmt.Sprintf("took %s", r.Cost)
 }

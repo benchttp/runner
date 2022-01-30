@@ -6,11 +6,10 @@ import (
 	"time"
 
 	"github.com/benchttp/runner/config"
-	"github.com/benchttp/runner/record"
 	"github.com/benchttp/runner/semimpl"
 )
 
-func doRequest(url string, timeout time.Duration) record.Record {
+func doRequest(url string, timeout time.Duration) Record {
 	client := http.Client{
 		// Timeout includes connection time, any redirects, and reading the response body.
 		// We may want exclude reading the response body in our benchmark tool.
@@ -22,10 +21,10 @@ func doRequest(url string, timeout time.Duration) record.Record {
 	resp, err := client.Get(url) //nolint:bodyclose
 	end := time.Since(start)
 	if err != nil {
-		return record.Record{Error: err}
+		return Record{Error: err}
 	}
 
-	return record.New(resp, end)
+	return newRecord(resp, end)
 }
 
 // Do launches a goroutine to ping url as soon as a thread is
@@ -33,7 +32,7 @@ func doRequest(url string, timeout time.Duration) record.Record {
 // The value of concurrency limits the number of concurrent threads.
 // Once all requests have been made or on done signal from ctx,
 // waits for goroutines to end and returns the collected records.
-func Do(cfg config.Config) []record.Record {
+func Do(cfg config.Config) []Record {
 	var (
 		uri        = cfg.Request.URL.String()
 		numWorker  = cfg.RunnerOptions.Concurrency
@@ -42,7 +41,7 @@ func Do(cfg config.Config) []record.Record {
 		gloTimeout = cfg.RunnerOptions.GlobalTimeout
 	)
 
-	records := record.NewSafeSlice(numRequest)
+	records := NewSafeSlice(numRequest)
 
 	ctx, cancel := context.WithTimeout(context.Background(), gloTimeout)
 	defer cancel()
