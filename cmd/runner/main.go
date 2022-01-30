@@ -45,14 +45,15 @@ func main() {
 	cfg := makeRunnerConfig()
 	fmt.Println(cfg)
 
+	req := request.New(cfg.RunnerOptions)
+
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.RunnerOptions.GlobalTimeout)
 	defer cancel()
 
-	rec := request.Do(ctx, cfg)
+	req.Run(ctx, cfg.Request)
+	rep := req.Collect()
 
-	l := request.Collect(rec)
-
-	fmt.Println("total:", l)
+	fmt.Println("total:", rep.Length)
 }
 
 // makeRunnerConfig returns a config.Config initialized with config file
