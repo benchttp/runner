@@ -34,8 +34,14 @@ func (cfg Config) String() string {
 
 // New returns a default Config overridden with given parameters.
 func New(uri string, requests, concurrency int, requestTimeout, globalTimeout time.Duration) Config {
-	cfg := Config{
+	var urlURL *url.URL
+	if uri != "" {
+		// ignore err: a Config can be invalid at this point
+		urlURL, _ = url.Parse(uri)
+	}
+	return Config{
 		Request: Request{
+			URL:     urlURL,
 			Timeout: requestTimeout,
 		},
 		RunnerOptions: RunnerOptions{
@@ -44,9 +50,6 @@ func New(uri string, requests, concurrency int, requestTimeout, globalTimeout ti
 			GlobalTimeout: globalTimeout,
 		},
 	}
-	cfg.Request.URL, _ = url.Parse(uri) // TODO: error handling
-
-	return MergeDefault(cfg)
 }
 
 // Default returns a default config that is safe to use.
