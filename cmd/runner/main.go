@@ -45,12 +45,20 @@ func main() {
 	cfg := makeRunnerConfig()
 	fmt.Println(cfg)
 
-	req := request.New(cfg.RunnerOptions)
+	req := request.New(request.Options{
+		Concurrency: cfg.RunnerOptions.Concurrency,
+		Requests:    cfg.RunnerOptions.Requests,
+		Duration:    cfg.RunnerOptions.GlobalTimeout,
+		Timeout:     cfg.Request.Timeout,
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.RunnerOptions.GlobalTimeout)
 	defer cancel()
 
-	req.Run(ctx, cfg.Request)
+	req.Run(ctx, request.Target{
+		Method: cfg.Request.Method,
+		URL:    cfg.Request.URL,
+	})
 	rep := req.Collect()
 
 	fmt.Println("total:", rep.Length)

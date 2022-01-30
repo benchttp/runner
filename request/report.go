@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// Report represents the collected results of a benchmark test.
 type Report struct {
 	Records []Record `json:"records"`
 	Length  int      `json:"length"`
@@ -14,11 +15,10 @@ type Report struct {
 	Fail    int      `json:"fail"`
 }
 
-// Collects pulls the records from the given channel as soon as
+// Collects pulls the records from Requester.Records as soon as
 // they are available and consumes them to build the report.
-// When all the records have been collected and the channel is
-// closed, returns the report.
-// Blocks until the records channel is empty.
+// Returns the report when all the records have been collected.
+// Collects will blocks until Requester.Records is empty.
 func (r *Requester) Collect() Report {
 	rep := Report{}
 
@@ -35,8 +35,7 @@ func (r *Requester) Collect() Report {
 	return rep
 }
 
-// Send sends the report to url. Returns a non-nil error if any
-// occurs during the process.
+// Send sends the report to url. Returns any non-nil error that occurred.
 func (r *Requester) Send(url string, report Report) error {
 	body := bytes.Buffer{}
 	if err := json.NewEncoder(&body).Encode(report); err != nil {

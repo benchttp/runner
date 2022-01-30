@@ -6,40 +6,47 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/benchttp/runner/config"
 	"github.com/benchttp/runner/semimpl"
 )
 
+// Options are a set of properties that define Requester behavior.
+type Options struct {
+	Requests    int
+	Concurrency int
+	Duration    time.Duration
+	Timeout     time.Duration
+}
+
+// Requester executes the benchmark. It wraps http.Client.
 type Requester struct {
-	Records chan Record
+	Records chan Record // Records provides read access to the results of Requester.Run.
 
 	client      http.Client
 	concurrency int
 	requests    int
 }
 
-func New(cfg config.RunnerOptions) *Requester {
+// New returns a Requester configured with specified Options.
+func New(o Options) *Requester {
 	r := &Requester{
-		Records:     make(chan Record, cfg.Requests),
-		concurrency: cfg.Concurrency,
-		requests:    cfg.Requests,
+		Records:     make(chan Record, o.Requests),
+		concurrency: o.Concurrency,
+		requests:    o.Requests,
 	}
 
 	r.client = http.Client{
 		// Timeout includes connection time, any redirects, and reading the response body.
 		// We may want exclude reading the response body in our benchmark tool.
-		Timeout: cfg.GlobalTimeout, // FIXME bad config struct
+		Timeout: o.Timeout,
 	}
 
 	return r
 }
 
-func (r *Requester) Run(ctx context.Context, cfg config.Request) {
-	t := Target{
-		URL:    cfg.URL,
-		Method: cfg.Method,
-	}
-
+// Run launches the benchmark test. The test runs inside a goroutine managing
+// its own concurrent workers. Run does not block, the results of the test can
+// be pipelined from Requester.Records for some other usage.
+func (r *Requester) Run(ctx context.Context, t Target) {
 	go func() {
 		defer close(r.Records)
 		semimpl.Do(ctx, r.concurrency, r.requests, func() {
@@ -48,7 +55,10 @@ func (r *Requester) Run(ctx context.Context, cfg config.Request) {
 	}()
 }
 
-// Record is a summary of an http call.
+// Record is the summary of a HTTP response. If Record.Error is non-nil,
+// the HTTP call failed anywhere from making the request to decoding the
+// response body, invalidating the entire response, as it is not a remote
+// server error.
 type Record struct {
 	Time  time.Duration `json:"time"`
 	Code  int           `json:"code"`
