@@ -22,6 +22,7 @@ type Requester struct {
 	Records chan Record // Records provides read access to the results of Requester.Run.
 
 	client      http.Client
+	target      Target
 	concurrency int
 	requests    int
 }
@@ -47,11 +48,11 @@ func New(o Options) *Requester {
 // its own concurrent workers. Run does not block, the results of the test can
 // be pipelined from Requester.Records for some other usage.
 func (r *Requester) Run(ctx context.Context, t Target) {
+	r.target = t // TODO should it be set in New or here, as it is only relevant down stream?
+
 	go func() {
 		defer close(r.Records)
-		semimpl.Do(ctx, r.concurrency, r.requests, func() {
-			r.record(t)
-		})
+		semimpl.Do(ctx, r.concurrency, r.requests, r.record)
 	}()
 }
 
@@ -66,8 +67,8 @@ type Record struct {
 	Error error         `json:"error"`
 }
 
-func (r *Requester) record(t Target) {
-	req, err := t.Request()
+func (r *Requester) record() {
+	req, err := r.target.Request()
 	if err != nil {
 		r.Records <- Record{Error: err}
 		return

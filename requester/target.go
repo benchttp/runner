@@ -9,9 +9,10 @@ import (
 // Target defines the target of the benchmark test.
 // It is a subset of http.Request.
 type Target struct {
-	Method string   `json:"method"`
-	URL    *url.URL `json:"url"`
-	Body   []byte   `json:"body,omitempty"` // Body is not used for now.
+	Method string      `json:"method"`
+	URL    *url.URL    `json:"url"`
+	Body   []byte      `json:"body,omitempty"`   // Body is not used for now.
+	Header http.Header `json:"header,omitempty"` // Header is not used for now.
 }
 
 // Request returns a *http.Request created from Target. Returns any non-nil

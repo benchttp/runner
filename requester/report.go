@@ -9,6 +9,7 @@ import (
 
 // Report represents the collected results of a benchmark test.
 type Report struct {
+	Target  Target   `json:"target"`
 	Records []Record `json:"records"`
 	Length  int      `json:"length"`
 	Success int      `json:"success"`
@@ -20,7 +21,9 @@ type Report struct {
 // Returns the report when all the records have been collected.
 // Collects will blocks until Requester.Records is empty.
 func (r *Requester) Collect() Report {
-	rep := Report{}
+	rep := Report{
+		Target: r.target,
+	}
 
 	for rec := range r.Records {
 		if rec.Error != nil {
