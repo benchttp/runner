@@ -7,12 +7,14 @@ import (
 	"time"
 )
 
+// Request contains the confing options relative to a single request.
 type Request struct {
 	Method  string
 	URL     *url.URL
 	Timeout time.Duration
 }
 
+// RunnerOptions contains options relative to the runner.
 type RunnerOptions struct {
 	Requests      int
 	Concurrency   int
@@ -20,6 +22,7 @@ type RunnerOptions struct {
 }
 
 // Config represents the configuration of the runner.
+// It must be validated using Config.Validate before usage.
 type Config struct {
 	Request       Request
 	RunnerOptions RunnerOptions
@@ -32,7 +35,9 @@ func (cfg Config) String() string {
 	return string(b)
 }
 
-// New returns a Config initialized with given parameters.
+// New returns a Config initialized with given parameters. The returned Config
+// is not guaranteed to be safe: it must be validated using Config.Validate
+// before usage.
 func New(uri string, requests, concurrency int, requestTimeout, globalTimeout time.Duration) Config {
 	var urlURL *url.URL
 	if uri != "" {
@@ -58,7 +63,8 @@ func Default() Config {
 }
 
 // Merge returns a Config after a base Config overridden by all non-zero values
-// of override.
+// of override. The returned Config is not guaranteed to be safe: it must be
+// validated using Config.Validate before usage.
 func Merge(base, override Config) Config {
 	if override.Request.Method != "" {
 		base.Request.Method = override.Request.Method
@@ -83,6 +89,8 @@ func Merge(base, override Config) Config {
 }
 
 // MergeDefault merges override with the default config calling Merge.
+// The returned Config is not guaranteed to be safe: it must be validated
+// using Config.Validate before usage.
 func MergeDefault(override Config) Config {
 	return Merge(Default(), override)
 }
