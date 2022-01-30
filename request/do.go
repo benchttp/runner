@@ -32,23 +32,33 @@ func doRequest(url string, timeout time.Duration) Record {
 // The value of concurrency limits the number of concurrent threads.
 // Once all requests have been made or on done signal from ctx,
 // waits for goroutines to end and returns the collected records.
-func Do(cfg config.Config) []Record {
+func Do(ctx context.Context, cfg config.Config) <-chan Record {
 	var (
 		uri        = cfg.Request.URL.String()
 		numWorker  = cfg.RunnerOptions.Concurrency
 		numRequest = cfg.RunnerOptions.Requests
 		reqTimeout = cfg.Request.Timeout
-		gloTimeout = cfg.RunnerOptions.GlobalTimeout
 	)
 
-	records := NewSafeSlice(numRequest)
+	ch := make(chan Record, numRequest)
 
-	ctx, cancel := context.WithTimeout(context.Background(), gloTimeout)
-	defer cancel()
+	go func() {
+		defer close(ch)
 
-	semimpl.Do(ctx, numWorker, numRequest, func() {
-		records.Append(doRequest(uri, reqTimeout))
-	})
+		semimpl.Do(ctx, numWorker, numRequest, func() {
+			ch <- doRequest(uri, reqTimeout)
+		})
+	}()
 
-	return records.Slice()
+	return ch
+}
+
+// Collect collects records from ch and returns how many were collected.
+func Collect(ch <-chan Record) int {
+	var length int
+
+	for range ch {
+		length++
+	}
+	return length
 }

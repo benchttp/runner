@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -44,9 +45,14 @@ func main() {
 	cfg := makeRunnerConfig()
 	fmt.Println(cfg)
 
-	rec := request.Do(cfg)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.RunnerOptions.GlobalTimeout)
+	defer cancel()
 
-	fmt.Println("total:", len(rec))
+	rec := request.Do(ctx, cfg)
+
+	l := request.Collect(rec)
+
+	fmt.Println("total:", l)
 }
 
 // makeRunnerConfig returns a config.Config initialized with config file
