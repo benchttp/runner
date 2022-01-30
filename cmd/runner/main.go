@@ -11,7 +11,7 @@ import (
 
 	"github.com/benchttp/runner/config"
 	configfile "github.com/benchttp/runner/config/file"
-	"github.com/benchttp/runner/request"
+	"github.com/benchttp/runner/requester"
 )
 
 var (
@@ -45,7 +45,7 @@ func main() {
 	cfg := makeRunnerConfig()
 	fmt.Println(cfg)
 
-	req := request.New(request.Options{
+	r := requester.New(requester.Options{
 		Concurrency: cfg.RunnerOptions.Concurrency,
 		Requests:    cfg.RunnerOptions.Requests,
 		Duration:    cfg.RunnerOptions.GlobalTimeout,
@@ -55,13 +55,13 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.RunnerOptions.GlobalTimeout)
 	defer cancel()
 
-	req.Run(ctx, request.Target{
+	r.Run(ctx, requester.Target{
 		Method: cfg.Request.Method,
 		URL:    cfg.Request.URL,
 	})
-	rep := req.Collect()
+	report := r.Collect()
 
-	fmt.Println("total:", rep.Length)
+	fmt.Println("total:", report.Length)
 }
 
 // makeRunnerConfig returns a config.Config initialized with config file
