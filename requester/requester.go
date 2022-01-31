@@ -31,10 +31,9 @@ func New(cfg config.Config) *Requester {
 	}
 }
 
-// Run launches the benchmark test. The test runs inside a goroutine managing
-// its own concurrent workers. Run does not block, the results of the test can
-// be pipelined from Requester.Records for some other usage.
-func (r *Requester) Run() {
+// Run starts the benchmark test and pipelines the results inside a Report.
+// Returns the Report when the test ended and all results have been collected.
+func (r *Requester) Run() Report {
 	ctx, cancel := context.WithTimeout(context.Background(), r.config.RunnerOptions.GlobalTimeout)
 
 	go func() {
@@ -46,6 +45,8 @@ func (r *Requester) Run() {
 			r.record,
 		)
 	}()
+
+	return r.collect()
 }
 
 // Record is the summary of a HTTP response. If Record.Error is non-nil,

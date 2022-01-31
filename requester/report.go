@@ -23,11 +23,11 @@ func (rep Report) String() string {
 	return string(b)
 }
 
-// Collects pulls the records from Requester.Records as soon as
+// collect pulls the records from Requester.Records as soon as
 // they are available and consumes them to build the report.
 // Returns the report when all the records have been collected.
-// Collects will blocks until Requester.Records is empty.
-func (r *Requester) Collect() Report {
+// Requester.collect will blocks until Requester.Records is empty.
+func (r *Requester) collect() Report {
 	rep := Report{Config: r.config}
 
 	for rec := range r.Records {
@@ -43,8 +43,8 @@ func (r *Requester) Collect() Report {
 	return rep
 }
 
-// Send sends the report to url. Returns any non-nil error that occurred.
-func (r *Requester) Send(url string, report Report) error {
+// Report sends the report to url. Returns any non-nil error that occurred.
+func (r *Requester) Report(url string, report Report) error {
 	body := bytes.Buffer{}
 	if err := json.NewEncoder(&body).Encode(report); err != nil {
 		return fmt.Errorf("error sending the report: %s", err)
@@ -67,13 +67,13 @@ func (r *Requester) Send(url string, report Report) error {
 	return nil
 }
 
-// CollectAndSend calls Collect and then Send in a single
+// RunAndReport calls Run and then Report in a single
 // invocation. It's useful for simple usecases where the
 // caller don't need to known about the Report.
-func (r *Requester) CollectAndSend(url string) error {
-	report := r.Collect()
+func (r *Requester) RunAndReport(url string) error {
+	report := r.Run()
 
-	if err := r.Send(url, report); err != nil {
+	if err := r.Report(url, report); err != nil {
 		return err
 	}
 	return nil

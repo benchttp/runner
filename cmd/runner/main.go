@@ -45,9 +45,7 @@ func main() {
 	fmt.Println(cfg)
 
 	r := requester.New(cfg)
-	r.Run()
-	report := r.Collect()
-
+	report := r.Run()
 	fmt.Println("total:", report.Length)
 }
 
