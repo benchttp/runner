@@ -5,9 +5,44 @@ import (
 	"reflect"
 	"testing"
 	"time"
+	"strings"
 
 	"github.com/benchttp/runner/config"
 )
+
+func TestConfigValidation(t *testing.T) {
+	t.Run("test valid configuration", func(t *testing.T) {
+		cfg := config.New("https://github.com/benchttp/", 5, 5, 5, 5)
+		cfg, err := cfg.Validate()
+		if err != nil {
+			t.Errorf("valid configuration not considered as such")
+		}
+	})
+
+	t.Run("test invalid configuration returns ErrInvalid error with correct messages", func(t *testing.T) {
+		cfg := config.New("github-com/benchttp/", -5, -5, -5, -5)
+		cfg, err := cfg.Validate()
+		if err == nil {
+			t.Errorf("invalid configuration considered valid")
+		} else {
+			if !errorContains(err, "-url: " + cfg.Request.URL.String() + " is not a valid url") {
+				t.Errorf("\n- information about invalid url missing from error message")
+			}
+			if !errorContains(err, "-requests: must be >= 0, we got ") {
+				t.Errorf("\n- information about invalid requests number missing from error message")
+			}
+			if !errorContains(err, "-concurrency: must be > 0, we got ") {
+				t.Errorf("\n- information about invalid concurrency number missing from error message")
+			}
+			if !errorContains(err, "-timeout: must be > 0, we got") {
+				t.Errorf("\n- information about invalid timeout missing from error message")
+			}
+			if !errorContains(err, "-globalTimeout: must be > 0, we got ") {
+				t.Errorf("\n- information about invalid globalTimeout missing from error message")
+			}	
+		}			
+	})
+}
 
 func TestMerge(t *testing.T) {
 	t.Run("do not override with zero values", func(t *testing.T) {
@@ -129,4 +164,15 @@ func newConfig() config.Config {
 			GlobalTimeout: 1 * time.Second,
 		},
 	}
+}
+
+// To check that the error message is as expected
+func errorContains(err error, expected string) bool {
+    if err == nil {
+        return expected == ""
+    }
+    if expected == "" {
+        return false
+    }
+    return strings.Contains(err.Error(), expected)
 }
