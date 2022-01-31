@@ -48,6 +48,12 @@ func main() {
 	cfg := makeRunnerConfig()
 	fmt.Println(cfg)
 
+	cfg, err := cfg.Validate()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	if err := requester.New(cfg).RunAndReport(serverURL); err != nil {
 		log.Fatal(err)
 	}
