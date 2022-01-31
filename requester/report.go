@@ -5,15 +5,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/benchttp/runner/config"
 )
 
 // Report represents the collected results of a benchmark test.
 type Report struct {
-	Target  Target   `json:"target"`
-	Records []Record `json:"records"`
-	Length  int      `json:"length"`
-	Success int      `json:"success"`
-	Fail    int      `json:"fail"`
+	Config  config.Config `json:"config"`
+	Records []Record      `json:"records"`
+	Length  int           `json:"length"`
+	Success int           `json:"success"`
+	Fail    int           `json:"fail"`
+}
+
+func (rep Report) String() string {
+	b, _ := json.MarshalIndent(rep, "", "  ")
+	return string(b)
 }
 
 // Collects pulls the records from Requester.Records as soon as
@@ -21,9 +28,7 @@ type Report struct {
 // Returns the report when all the records have been collected.
 // Collects will blocks until Requester.Records is empty.
 func (r *Requester) Collect() Report {
-	rep := Report{
-		Target: r.target,
-	}
+	rep := Report{Config: r.config}
 
 	for rec := range r.Records {
 		if rec.Error != nil {

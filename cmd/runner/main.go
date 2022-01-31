@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -45,20 +44,8 @@ func main() {
 	cfg := makeRunnerConfig()
 	fmt.Println(cfg)
 
-	r := requester.New(requester.Options{
-		Concurrency: cfg.RunnerOptions.Concurrency,
-		Requests:    cfg.RunnerOptions.Requests,
-		Duration:    cfg.RunnerOptions.GlobalTimeout,
-		Timeout:     cfg.Request.Timeout,
-	})
-
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.RunnerOptions.GlobalTimeout)
-	defer cancel()
-
-	r.Run(ctx, requester.Target{
-		Method: cfg.Request.Method,
-		URL:    cfg.Request.URL,
-	})
+	r := requester.New(cfg)
+	r.Run()
 	report := r.Collect()
 
 	fmt.Println("total:", report.Length)

@@ -6,53 +6,45 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/benchttp/runner/config"
 	"github.com/benchttp/runner/semimpl"
 )
-
-// Options are a set of properties that define Requester behavior.
-type Options struct {
-	Requests    int
-	Concurrency int
-	Duration    time.Duration
-	Timeout     time.Duration
-}
 
 // Requester executes the benchmark. It wraps http.Client.
 type Requester struct {
 	Records chan Record // Records provides read access to the results of Requester.Run.
 
-	client      http.Client
-	target      Target
-	concurrency int
-	requests    int
+	config config.Config
+	client http.Client
 }
 
 // New returns a Requester configured with specified Options.
-func New(o Options) *Requester {
-	r := &Requester{
-		Records:     make(chan Record, o.Requests),
-		concurrency: o.Concurrency,
-		requests:    o.Requests,
+func New(cfg config.Config) *Requester {
+	return &Requester{
+		Records: make(chan Record, cfg.RunnerOptions.Requests),
+		config:  cfg,
+		client: http.Client{
+			// Timeout includes connection time, any redirects, and reading the response body.
+			// We may want exclude reading the response body in our benchmark tool.
+			Timeout: cfg.Request.Timeout,
+		},
 	}
-
-	r.client = http.Client{
-		// Timeout includes connection time, any redirects, and reading the response body.
-		// We may want exclude reading the response body in our benchmark tool.
-		Timeout: o.Timeout,
-	}
-
-	return r
 }
 
 // Run launches the benchmark test. The test runs inside a goroutine managing
 // its own concurrent workers. Run does not block, the results of the test can
 // be pipelined from Requester.Records for some other usage.
-func (r *Requester) Run(ctx context.Context, t Target) {
-	r.target = t // TODO should it be set in New or here, as it is only relevant down stream?
+func (r *Requester) Run() {
+	ctx, cancel := context.WithTimeout(context.Background(), r.config.RunnerOptions.GlobalTimeout)
 
 	go func() {
+		defer cancel()
 		defer close(r.Records)
-		semimpl.Do(ctx, r.concurrency, r.requests, r.record)
+		semimpl.Do(ctx,
+			r.config.RunnerOptions.Concurrency,
+			r.config.RunnerOptions.Requests,
+			r.record,
+		)
 	}()
 }
 
@@ -68,7 +60,7 @@ type Record struct {
 }
 
 func (r *Requester) record() {
-	req, err := r.target.Request()
+	req, err := r.config.HTTPRequest()
 	if err != nil {
 		r.Records <- Record{Error: err}
 		return
