@@ -12,7 +12,7 @@ import (
 
 // Requester executes the benchmark. It wraps http.Client.
 type Requester struct {
-	Records chan Record // Records provides read access to the results of Requester.Run.
+	records chan Record // Records provides read access to the results of Requester.Run.
 
 	config config.Config
 	client http.Client
@@ -21,7 +21,7 @@ type Requester struct {
 // New returns a Requester configured with specified Options.
 func New(cfg config.Config) *Requester {
 	return &Requester{
-		Records: make(chan Record, cfg.RunnerOptions.Requests),
+		records: make(chan Record, cfg.RunnerOptions.Requests),
 		config:  cfg,
 		client: http.Client{
 			// Timeout includes connection time, any redirects, and reading the response body.
@@ -38,7 +38,7 @@ func (r *Requester) Run() Report {
 
 	go func() {
 		defer cancel()
-		defer close(r.Records)
+		defer close(r.records)
 		semimpl.Do(ctx,
 			r.config.RunnerOptions.Concurrency,
 			r.config.RunnerOptions.Requests,
@@ -63,7 +63,7 @@ type Record struct {
 func (r *Requester) record() {
 	req, err := r.config.HTTPRequest()
 	if err != nil {
-		r.Records <- Record{Error: err}
+		r.records <- Record{Error: err}
 		return
 	}
 
@@ -71,18 +71,18 @@ func (r *Requester) record() {
 
 	resp, err := r.client.Do(req)
 	if err != nil {
-		r.Records <- Record{Error: err}
+		r.records <- Record{Error: err}
 		return
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
-		r.Records <- Record{Error: err}
+		r.records <- Record{Error: err}
 		return
 	}
 
-	r.Records <- Record{
+	r.records <- Record{
 		Code:  resp.StatusCode,
 		Time:  time.Since(sent),
 		Bytes: len(body),

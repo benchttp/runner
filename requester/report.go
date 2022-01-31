@@ -33,7 +33,7 @@ func (r *Requester) collect() Report {
 		Records: make([]Record, 0, r.config.RunnerOptions.Requests), // Provide capacity if known.
 	}
 
-	for rec := range r.Records {
+	for rec := range r.records {
 		if rec.Error != nil {
 			rep.Fail++
 		} else {
