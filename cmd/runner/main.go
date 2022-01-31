@@ -50,8 +50,7 @@ func main() {
 
 	cfg, err := cfg.Validate()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	if err := requester.New(cfg).RunAndReport(serverURL); err != nil {

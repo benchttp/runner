@@ -3,9 +3,9 @@ package config_test
 import (
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
-	"strings"
 
 	"github.com/benchttp/runner/config"
 )
@@ -13,7 +13,7 @@ import (
 func TestConfigValidation(t *testing.T) {
 	t.Run("test valid configuration", func(t *testing.T) {
 		cfg := config.New("https://github.com/benchttp/", 5, 5, 5, 5)
-		cfg, err := cfg.Validate()
+		_, err := cfg.Validate()
 		if err != nil {
 			t.Errorf("valid configuration not considered as such")
 		}
@@ -21,11 +21,11 @@ func TestConfigValidation(t *testing.T) {
 
 	t.Run("test invalid configuration returns ErrInvalid error with correct messages", func(t *testing.T) {
 		cfg := config.New("github-com/benchttp/", -5, -5, -5, -5)
-		cfg, err := cfg.Validate()
+		_, err := cfg.Validate()
 		if err == nil {
 			t.Errorf("invalid configuration considered valid")
 		} else {
-			if !errorContains(err, "-url: " + cfg.Request.URL.String() + " is not a valid url") {
+			if !errorContains(err, "-url: "+cfg.Request.URL.String()+" is not a valid url") {
 				t.Errorf("\n- information about invalid url missing from error message")
 			}
 			if !errorContains(err, "-requests: must be >= 0, we got ") {
@@ -39,8 +39,8 @@ func TestConfigValidation(t *testing.T) {
 			}
 			if !errorContains(err, "-globalTimeout: must be > 0, we got ") {
 				t.Errorf("\n- information about invalid globalTimeout missing from error message")
-			}	
-		}			
+			}
+		}
 	})
 }
 
@@ -168,11 +168,11 @@ func newConfig() config.Config {
 
 // To check that the error message is as expected
 func errorContains(err error, expected string) bool {
-    if err == nil {
-        return expected == ""
-    }
-    if expected == "" {
-        return false
-    }
-    return strings.Contains(err.Error(), expected)
+	if err == nil {
+		return expected == ""
+	}
+	if expected == "" {
+		return false
+	}
+	return strings.Contains(err.Error(), expected)
 }

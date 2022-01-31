@@ -1,11 +1,7 @@
 package config
 
-import (
-	"fmt"
-)
-
 type ErrInvalid struct {
-	invalidValues	[]error
+	invalidValues []error
 }
 
 func (e *ErrInvalid) Error() string {
@@ -13,5 +9,5 @@ func (e *ErrInvalid) Error() string {
 	for _, err := range e.invalidValues {
 		errorMessage += err.Error() + "\n"
 	}
-	return fmt.Sprintf(errorMessage)
+	return errorMessage
 }
