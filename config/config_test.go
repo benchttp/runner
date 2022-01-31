@@ -109,7 +109,7 @@ func TestMerge(t *testing.T) {
 
 func TestNew(t *testing.T) {
 	t.Run("zero value params return empty config", func(t *testing.T) {
-		exp := config.Config{}
+		exp := config.Config{Request: config.Request{URL: &url.URL{}}}
 		if got := config.New("", 0, 0, 0, 0); !reflect.DeepEqual(got, exp) {
 			t.Errorf("returned non-zero config:\nexp %#v\ngot %#v", exp, got)
 		}
@@ -118,7 +118,7 @@ func TestNew(t *testing.T) {
 	t.Run("non-zero params return initialized config", func(t *testing.T) {
 		var (
 			rawURL      = "http://example.com"
-			urlURL, _   = url.Parse(rawURL)
+			urlURL, _   = url.ParseRequestURI(rawURL)
 			requests    = 1
 			concurrency = 2
 			reqTimeout  = 3 * time.Second

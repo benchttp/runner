@@ -50,10 +50,10 @@ func (cfg Config) HTTPRequest() (*http.Request, error) {
 // is not guaranteed to be safe: it must be validated using Config.Validate
 // before usage.
 func New(uri string, requests, concurrency int, requestTimeout, globalTimeout time.Duration) Config {
-	var urlURL *url.URL
-	if uri != "" {
-		// ignore err: a Config can be invalid at this point
-		urlURL, _ = url.Parse(uri)
+	// ignore err: a Config can be invalid at this point
+	urlURL, _ := url.ParseRequestURI(uri)
+	if urlURL == nil {
+		urlURL = &url.URL{}
 	}
 	return Config{
 		Request: Request{
