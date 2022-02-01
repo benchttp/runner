@@ -69,7 +69,7 @@ func New(uri string, requests, concurrency int, requestTimeout, globalTimeout ti
 }
 
 // Validate returns the config and a not nil ErrInvalid if any of the fields provided by the user is not valid
-func (cfg Config) Validate() error {
+func (cfg Config) Validate() error { //nolint
 	inputErrors := []error{}
 
 	_, err := url.ParseRequestURI(cfg.Request.URL.String())
@@ -77,16 +77,12 @@ func (cfg Config) Validate() error {
 		inputErrors = append(inputErrors, fmt.Errorf("-url: %s is not a valid url", cfg.Request.URL.String()))
 	}
 
-	if cfg.RunnerOptions.Requests < 1 {
-		if cfg.RunnerOptions.Requests != -1 {
-			inputErrors = append(inputErrors, fmt.Errorf("-requests: must be >= 0, we got %d", cfg.RunnerOptions.Requests))
-		}
+	if cfg.RunnerOptions.Requests < 1 && cfg.RunnerOptions.Requests != -1 {
+		inputErrors = append(inputErrors, fmt.Errorf("-requests: must be >= 0, we got %d", cfg.RunnerOptions.Requests))
 	}
 
-	if cfg.RunnerOptions.Concurrency < 1 {
-		if cfg.RunnerOptions.Concurrency != -1 {
-			inputErrors = append(inputErrors, fmt.Errorf("-concurrency: must be > 0, we got %d", cfg.RunnerOptions.Concurrency))
-		}
+	if cfg.RunnerOptions.Concurrency < 1 && cfg.RunnerOptions.Concurrency != -1 {
+		inputErrors = append(inputErrors, fmt.Errorf("-concurrency: must be > 0, we got %d", cfg.RunnerOptions.Concurrency))
 	}
 
 	if cfg.Request.Timeout < 0 {
