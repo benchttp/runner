@@ -7,14 +7,14 @@ import (
 	"time"
 )
 
-// Event is a stage of an outgoing http request associated with a timestamp.
+// Event is a stage of an outgoing HTTP request associated with a timestamp.
 type Event struct {
 	Name string        `json:"name"`
 	Time time.Duration `json:"time"`
 }
 
 // tracer is a http.RoundTripper to be used as a http.Transport
-// that records the events of an outgoing http request.
+// that records the events of an outgoing HTTP request.
 type tracer struct {
 	start  time.Time
 	events []Event
@@ -29,7 +29,7 @@ func (p *tracer) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 // trace returns a http.ClientTrace that timestamps and records the events
-// of an outgoint http requests.
+// of an outgoing HTTP request.
 func (p *tracer) trace() *httptrace.ClientTrace {
 	return &httptrace.ClientTrace{
 		GetConn: func(string) {

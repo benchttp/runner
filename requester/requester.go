@@ -64,7 +64,7 @@ type Record struct {
 	Time   time.Duration `json:"time"`
 	Code   int           `json:"code"`
 	Bytes  int           `json:"bytes"`
-	Error  error         `json:"error"`
+	Error  error         `json:"error,omitempty"`
 	Events []Event       `json:"events"`
 }
 
