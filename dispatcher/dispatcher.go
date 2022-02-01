@@ -2,6 +2,7 @@ package dispatcher
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"golang.org/x/sync/semaphore"
@@ -48,16 +49,11 @@ func (d dispatcher) Do(ctx context.Context, maxIter int, callback func()) {
 
 // New returns a Dispatcher initialized with numWorker.
 func New(numWorker int) Dispatcher {
-	numWorker = sanitizeNumWorker(numWorker)
+	if numWorker < 1 {
+		panic(fmt.Sprintf("invalid numWorker value: must be > 1, got %d", numWorker))
+	}
 	sem := semaphore.NewWeighted(int64(numWorker))
 	return dispatcher{sem: sem}
-}
-
-func sanitizeNumWorker(numWorkers int) int {
-	if numWorkers < 1 {
-		return 1
-	}
-	return numWorkers
 }
 
 func sanitizeMaxIter(maxIter int) int {
