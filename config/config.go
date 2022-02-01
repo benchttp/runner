@@ -46,6 +46,28 @@ func (cfg Config) HTTPRequest() (*http.Request, error) {
 	)
 }
 
+// Override returns a new Config based on cfg with overridden values from c.
+// Only fields specified in options are replaced. Accepted options are:
+// "url", "timeout", "requests", "concurrency", "globalTimeout".
+// Other values are silently ignored.
+func (cfg Config) Override(c Config, options ...string) Config {
+	for _, option := range options {
+		switch option {
+		case "url":
+			cfg.Request.URL = c.Request.URL
+		case "timeout":
+			cfg.Request.Timeout = c.Request.Timeout
+		case "requests":
+			cfg.RunnerOptions.Requests = c.RunnerOptions.Requests
+		case "concurrency":
+			cfg.RunnerOptions.Concurrency = c.RunnerOptions.Concurrency
+		case "globalTimeout":
+			cfg.RunnerOptions.GlobalTimeout = c.RunnerOptions.GlobalTimeout
+		}
+	}
+	return cfg
+}
+
 // New returns a Config initialized with given parameters. The returned Config
 // is not guaranteed to be safe: it must be validated using Config.Validate
 // before usage.

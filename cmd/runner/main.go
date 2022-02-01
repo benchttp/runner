@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
 	"time"
 
@@ -57,36 +56,22 @@ func main() {
 // parseConfig returns a config.Config initialized with config file
 // options if found, overridden with CLI options.
 func parseConfig() config.Config {
-	cfg, err := configfile.Parse(configFile)
+	fileCfg, err := configfile.Parse(configFile)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		// config file is not mandatory, other errors are critical
 		log.Fatal(err)
 	}
 
-	overrideConfigWithCLIFlags(&cfg)
+	cliCfg := config.New(uri, requests, concurrency, timeout, globalTimeout)
 
-	return cfg
+	return fileCfg.Override(cliCfg, flagNames()...)
 }
 
-// overrideConfigWithCLIFlags replaces config.Config values for every
-// corresponding CLI flag set. It must be called after flag.Parse.
-func overrideConfigWithCLIFlags(cfg *config.Config) {
+// flagNames returns a slice of all flags set.
+func flagNames() []string {
+	var fields []string
 	flag.CommandLine.Visit(func(f *flag.Flag) {
-		switch f.Name {
-		case "url":
-			urlURL, _ := url.ParseRequestURI(uri)
-			if urlURL == nil {
-				urlURL = &url.URL{}
-			}
-			cfg.Request.URL = urlURL
-		case "timeout":
-			cfg.Request.Timeout = timeout
-		case "requests":
-			cfg.RunnerOptions.Requests = requests
-		case "concurrency":
-			cfg.RunnerOptions.Concurrency = concurrency
-		case "globalTimeout":
-			cfg.RunnerOptions.GlobalTimeout = globalTimeout
-		}
+		fields = append(fields, f.Name)
 	})
+	return fields
 }
