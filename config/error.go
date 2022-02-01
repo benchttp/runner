@@ -5,9 +5,9 @@ type ErrInvalid struct {
 }
 
 func (e *ErrInvalid) Error() string {
-	errorMessage := "Invalid value(s) provided:\n"
+	message := "Invalid value(s) provided:\n"
 	for _, err := range e.invalidValues {
-		errorMessage += err.Error() + "\n"
+		message += err.Error() + "\n"
 	}
-	return errorMessage
+	return message
 }
