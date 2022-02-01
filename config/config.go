@@ -78,11 +78,15 @@ func (cfg Config) Validate() error {
 	}
 
 	if cfg.RunnerOptions.Requests < 0 {
-		inputErrors = append(inputErrors, fmt.Errorf("-requests: must be >= 0, we got %d", cfg.RunnerOptions.Requests))
+		if cfg.RunnerOptions.Requests != -1 {
+			inputErrors = append(inputErrors, fmt.Errorf("-requests: must be >= 0, we got %d", cfg.RunnerOptions.Requests))
+		}
 	}
 
-	if cfg.RunnerOptions.Concurrency <= 0 {
-		inputErrors = append(inputErrors, fmt.Errorf("-concurrency: must be > 0, we got %d", cfg.RunnerOptions.Concurrency))
+	if cfg.RunnerOptions.Concurrency < 0 {
+		if cfg.RunnerOptions.Concurrency != -1 {
+			inputErrors = append(inputErrors, fmt.Errorf("-concurrency: must be > 0, we got %d", cfg.RunnerOptions.Concurrency))
+		}
 	}
 
 	if cfg.Request.Timeout < 0 {
