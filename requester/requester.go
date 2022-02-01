@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/benchttp/runner/config"
-	"github.com/benchttp/runner/semimpl"
+	"github.com/benchttp/runner/dispatcher"
 )
 
 // Requester executes the benchmark. It wraps http.Client.
@@ -46,11 +46,9 @@ func (r *Requester) Run() Report {
 	go func() {
 		defer cancel()
 		defer close(r.records)
-		semimpl.Do(ctx,
-			r.config.RunnerOptions.Concurrency,
-			r.config.RunnerOptions.Requests,
-			r.record,
-		)
+		dispatcher.
+			New(r.config.RunnerOptions.Concurrency).
+			Do(ctx, r.config.RunnerOptions.Requests, r.record)
 	}()
 
 	return r.collect()

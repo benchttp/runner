@@ -1,4 +1,4 @@
-package semimpl_test
+package dispatcher_test
 
 import (
 	"context"
@@ -7,20 +7,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benchttp/runner/semimpl"
+	"github.com/benchttp/runner/dispatcher"
 )
 
 func TestDo(t *testing.T) {
 	t.Run("stop when maxIter is reached", func(t *testing.T) {
 		const (
-			numWorkers = 1
-			maxIter    = 10
-			expIter    = 10
+			numWorker = 1
+			maxIter   = 10
+			expIter   = 10
 		)
 
 		gotIter := 0
 
-		semimpl.Do(context.Background(), numWorkers, maxIter, func() {
+		dispatcher.New(numWorker).Do(context.Background(), maxIter, func() {
 			gotIter++
 		})
 
@@ -31,9 +31,9 @@ func TestDo(t *testing.T) {
 
 	t.Run("stop on context timeout", func(t *testing.T) {
 		const (
-			timeout    = 100 * time.Millisecond
-			interval   = timeout / 10
-			numWorkers = 1
+			timeout   = 100 * time.Millisecond
+			interval  = timeout / 10
+			numWorker = 1
 
 			margin      = 25 * time.Millisecond // determined empirically
 			maxDuration = timeout + margin
@@ -48,7 +48,7 @@ func TestDo(t *testing.T) {
 		defer cancel()
 
 		gotDuration := timeFunc(func() {
-			semimpl.Do(ctx, numWorkers, maxIter, func() {
+			dispatcher.New(numWorker).Do(ctx, maxIter, func() {
 				gotIter++
 				time.Sleep(interval)
 			})
@@ -71,9 +71,9 @@ func TestDo(t *testing.T) {
 
 	t.Run("stop on context cancel", func(t *testing.T) {
 		const (
-			timeout    = 100 * time.Millisecond
-			interval   = timeout / 10
-			numWorkers = 1
+			timeout   = 100 * time.Millisecond
+			interval  = timeout / 10
+			numWorker = 1
 
 			margin      = 25 * time.Millisecond // determined empirically
 			maxDuration = timeout + margin
@@ -91,7 +91,7 @@ func TestDo(t *testing.T) {
 		}()
 
 		gotDuration := timeFunc(func() {
-			semimpl.Do(ctx, numWorkers, maxIter, func() {
+			dispatcher.New(numWorker).Do(ctx, maxIter, func() {
 				time.Sleep(interval)
 			})
 		})
@@ -113,14 +113,14 @@ func TestDo(t *testing.T) {
 
 	t.Run("limit concurrent workers", func(t *testing.T) {
 		const (
-			interval   = 10 * time.Millisecond
-			numWorkers = 10
-			maxIter    = 100
+			interval  = 10 * time.Millisecond
+			numWorker = 10
+			maxIter   = 100
 
 			// occasionnally we can have 1 extra concurrent goroutine,
 			// we consider it an acceptable error margin
 			margin             = 1
-			expMaxNumGoroutine = numWorkers + margin
+			expMaxNumGoroutine = numWorker + margin
 		)
 
 		var (
@@ -129,7 +129,7 @@ func TestDo(t *testing.T) {
 			gotNumGoroutines = make([]int, 0, maxIter)
 		)
 
-		semimpl.Do(context.Background(), numWorkers, maxIter, func() {
+		dispatcher.New(numWorker).Do(context.Background(), maxIter, func() {
 			mu.Lock()
 			gotNumGoroutines = append(gotNumGoroutines, runtime.NumGoroutine()-baseNumGoroutine)
 			mu.Unlock()
@@ -150,8 +150,8 @@ func TestDo(t *testing.T) {
 
 	t.Run("dispatch concurrent workers correctly", func(t *testing.T) {
 		const (
-			numWorkers = 3
-			maxIter    = 12
+			numWorker = 3
+			maxIter   = 12
 
 			minIntervalBetweenGroups = 30 * time.Millisecond
 			maxIntervalWithinGroup   = 10 * time.Millisecond
@@ -165,7 +165,7 @@ func TestDo(t *testing.T) {
 		)
 
 		start := time.Now()
-		semimpl.Do(context.Background(), numWorkers, maxIter, func() {
+		dispatcher.New(numWorker).Do(context.Background(), maxIter, func() {
 			mu.Lock()
 			elapsedTimes = append(elapsedTimes, time.Since(start))
 			mu.Unlock()
@@ -181,7 +181,7 @@ func TestDo(t *testing.T) {
 		// We check the resulting grouping against 2 rules:
 		// 	1. durations within a same group must be close
 		// 	2. max interval between two groups must be higher than the callback duration
-		groups := groupby(elapsedTimes, numWorkers)
+		groups := groupby(elapsedTimes, numWorker)
 		for groupIndex, group := range groups {
 			// 1. check durations within each group are similar
 			hi, lo := maxof(group), minof(group)
