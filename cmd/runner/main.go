@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -45,10 +44,8 @@ func parseArgs() {
 func main() {
 	parseArgs()
 
-	cfg := makeRunnerConfig()
-	fmt.Println(cfg)
-
-	if err := cfg.Validate(); err != nil {
+	cfg, err := makeRunnerConfig()
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -59,7 +56,7 @@ func main() {
 
 // makeRunnerConfig returns a config.Config initialized with config file
 // options if found, overridden with CLI options.
-func makeRunnerConfig() config.Config {
+func makeRunnerConfig() (config.Config, error) {
 	fileConfig, err := configfile.Parse(configFile)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		// config file is not mandatory, other errors are critical
@@ -68,5 +65,7 @@ func makeRunnerConfig() config.Config {
 
 	cliConfig := config.New(url, requests, concurrency, timeout, globalTimeout)
 
-	return config.Merge(fileConfig, cliConfig)
+	mergedConfig := config.Merge(fileConfig, cliConfig)
+
+	return mergedConfig, mergedConfig.Validate()
 }
