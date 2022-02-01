@@ -77,13 +77,13 @@ func (cfg Config) Validate() error {
 		inputErrors = append(inputErrors, fmt.Errorf("-url: %s is not a valid url", cfg.Request.URL.String()))
 	}
 
-	if cfg.RunnerOptions.Requests < 0 {
+	if cfg.RunnerOptions.Requests < 1 {
 		if cfg.RunnerOptions.Requests != -1 {
 			inputErrors = append(inputErrors, fmt.Errorf("-requests: must be >= 0, we got %d", cfg.RunnerOptions.Requests))
 		}
 	}
 
-	if cfg.RunnerOptions.Concurrency < 0 {
+	if cfg.RunnerOptions.Concurrency < 1 {
 		if cfg.RunnerOptions.Concurrency != -1 {
 			inputErrors = append(inputErrors, fmt.Errorf("-concurrency: must be > 0, we got %d", cfg.RunnerOptions.Concurrency))
 		}
