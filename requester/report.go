@@ -73,10 +73,14 @@ func (r *Requester) Report(url string, report Report) error {
 // invocation. It's useful for simple usecases where the
 // caller don't need to known about the Report.
 func (r *Requester) RunAndReport(url string) error {
-	report := r.Run()
+	report, err := r.Run()
+	if err != nil {
+		return err
+	}
 
 	if err := r.Report(url, report); err != nil {
 		return err
 	}
+
 	return nil
 }

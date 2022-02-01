@@ -40,18 +40,27 @@ func New(cfg config.Config) *Requester {
 
 // Run starts the benchmark test and pipelines the results inside a Report.
 // Returns the Report when the test ended and all results have been collected.
-func (r *Requester) Run() Report {
+func (r *Requester) Run() (Report, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), r.config.RunnerOptions.GlobalTimeout)
+	errCh := make(chan error)
 
 	go func() {
 		defer cancel()
 		defer close(r.records)
-		dispatcher.
+		if err := dispatcher.
 			New(r.config.RunnerOptions.Concurrency).
-			Do(ctx, r.config.RunnerOptions.Requests, r.record)
+			Do(ctx, r.config.RunnerOptions.Requests, r.record); err != nil {
+			errCh <- err
+		} else {
+			errCh <- nil
+		}
 	}()
 
-	return r.collect()
+	if err := <-errCh; err != nil {
+		return Report{}, err
+	}
+
+	return r.collect(), nil
 }
 
 // Record is the summary of a HTTP response. If Record.Error is non-nil,
