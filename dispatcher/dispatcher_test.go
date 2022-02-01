@@ -2,6 +2,7 @@ package dispatcher_test
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"sync"
 	"testing"
@@ -9,6 +10,39 @@ import (
 
 	"github.com/benchttp/runner/dispatcher"
 )
+
+func TestNew(t *testing.T) {
+	t.Run("panic if numWorker < 1", func(t *testing.T) {
+		for _, numWorker := range []int{-1, 0} {
+			func(numWorker int) {
+				expMessage := fmt.Sprintf(
+					"invalid numWorker value: must be > 1, got %d",
+					numWorker,
+				)
+
+				defer func() {
+					r := recover()
+					if r == nil {
+						t.Error("expected to panic but did not")
+					}
+					if r != expMessage {
+						t.Errorf("unexpected panic message:\nexp %s\ngot %v", expMessage, r)
+					}
+				}()
+
+				if d := dispatcher.New(numWorker); d != nil {
+					t.Error("returned a non-nil Dispatcher")
+				}
+			}(numWorker)
+		}
+	})
+
+	t.Run("return valid Dispatcher if numWorker > 0", func(t *testing.T) {
+		if d := dispatcher.New(10); d == nil {
+			t.Error("returned nil Dispatcher")
+		}
+	})
+}
 
 func TestDo(t *testing.T) {
 	t.Run("stop when maxIter is reached", func(t *testing.T) {
@@ -248,4 +282,41 @@ func timeFunc(f func()) time.Duration {
 	start := time.Now()
 	f()
 	return time.Since(start)
+}
+
+// AssertPanicMessage fails t if the calling func does not panic
+// with the expected message. It must be called with defer:
+//
+// 	func TestFuncThatPanics(t *testing.T) {
+// 		defer testutil.AssertPanicMessage(t, "oops, I panicked")
+// 		FuncThatPanics()
+// 	}
+func AssertPanicMessage(t *testing.T, expMessage string) {
+	t.Helper()
+	r := recover()
+	assertPanicked(t, r, expMessage, true)
+}
+
+// AssertPanic fails t if the calling func does not panic.
+// It must be called with defer:
+//
+// 	func TestFuncThatPanics(t *testing.T) {
+// 		defer testutil.AssertPanic(t)
+// 		FuncThatPanics()
+// 	}
+func AssertPanic(t *testing.T) {
+	t.Helper()
+	r := recover()
+	assertPanicked(t, r, "", false)
+}
+
+func assertPanicked(t *testing.T, rec interface{}, msg string, checkmsg bool) {
+	t.Helper()
+	if rec == nil {
+		t.Error("expected to panic but did not")
+		return
+	}
+	if checkmsg && msg != fmt.Sprint(rec) {
+		t.Errorf("bad panic message:\nexp %s\ngot %s", msg, rec)
+	}
 }
