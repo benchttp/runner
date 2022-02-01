@@ -7,14 +7,18 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-type Dispatcher struct {
+type Dispatcher interface {
+	Do(ctx context.Context, maxIter int, callback func())
+}
+
+type dispatcher struct {
 	sem *semaphore.Weighted
 }
 
 // Do concurrently executes callback at most maxIter times or until ctx is done
 // or canceled. Concurrency is handled leveraging the semaphore pattern, which
 // ensures at most Dispatcher.numWorkers goroutines are spawned at the same time.
-func (d Dispatcher) Do(ctx context.Context, maxIter int, callback func()) {
+func (d dispatcher) Do(ctx context.Context, maxIter int, callback func()) {
 	maxIter = sanitizeMaxIter(maxIter)
 	callback = sanitizeCallback(callback)
 
@@ -46,7 +50,7 @@ func (d Dispatcher) Do(ctx context.Context, maxIter int, callback func()) {
 func New(numWorker int) Dispatcher {
 	numWorker = sanitizeNumWorker(numWorker)
 	sem := semaphore.NewWeighted(int64(numWorker))
-	return Dispatcher{sem: sem}
+	return dispatcher{sem: sem}
 }
 
 func sanitizeNumWorker(numWorkers int) int {
