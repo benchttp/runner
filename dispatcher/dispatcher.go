@@ -59,8 +59,8 @@ func (d dispatcher) validate(maxIter int, callback func()) error {
 	}
 	if maxIter < d.numWorker {
 		return fmt.Errorf(
-			"%w: maxIter: must be >= numWorker, got numWorker == %d, maxIter == %d",
-			ErrInvalidValue, maxIter, d.numWorker,
+			"%w: maxIter: must be >= numWorker (%d), got %d",
+			ErrInvalidValue, d.numWorker, maxIter,
 		)
 	}
 	if callback == nil {
