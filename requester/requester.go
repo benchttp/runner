@@ -46,6 +46,10 @@ func (r *Requester) Run() (Report, error) {
 		return Report{}, err
 	}
 
+	if err := r.ping(req); err != nil {
+		return Report{}, err
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), r.config.RunnerOptions.GlobalTimeout)
 	errCh := make(chan error)
 
@@ -63,6 +67,14 @@ func (r *Requester) Run() (Report, error) {
 	}
 
 	return r.collect(), nil
+}
+
+func (r *Requester) ping(req *http.Request) error {
+	resp, err := r.client.Do(req)
+	if resp != nil {
+		resp.Body.Close()
+	}
+	return err
 }
 
 // Record is the summary of a HTTP response. If Record.Error is non-nil,
