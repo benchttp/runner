@@ -48,8 +48,7 @@ func main() {
 	cfg := makeRunnerConfig()
 	fmt.Println(cfg)
 
-	cfg, err := cfg.Validate()
-	if err != nil {
+	if err := cfg.Validate(); err != nil {
 		log.Fatal(err)
 	}
 

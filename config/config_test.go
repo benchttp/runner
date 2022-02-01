@@ -13,7 +13,7 @@ import (
 func TestConfigValidation(t *testing.T) {
 	t.Run("test valid configuration", func(t *testing.T) {
 		cfg := config.New("https://github.com/benchttp/", 5, 5, 5, 5)
-		_, err := cfg.Validate()
+		err := cfg.Validate()
 		if err != nil {
 			t.Errorf("valid configuration not considered as such")
 		}
@@ -21,7 +21,7 @@ func TestConfigValidation(t *testing.T) {
 
 	t.Run("test invalid configuration returns ErrInvalid error with correct messages", func(t *testing.T) {
 		cfg := config.New("github-com/benchttp/", -5, -5, -5, -5)
-		_, err := cfg.Validate()
+		err := cfg.Validate()
 		if err == nil {
 			t.Errorf("invalid configuration considered valid")
 		} else {
