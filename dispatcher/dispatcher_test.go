@@ -54,7 +54,7 @@ func TestDo(t *testing.T) {
 
 		gotIter := 0
 
-		dispatcher.New(numWorker).Do(context.Background(), maxIter, func() {
+		dispatcher.New(numWorker).Do(context.Background(), maxIter, func() { //nolint:errcheck
 			gotIter++
 		})
 
@@ -82,7 +82,7 @@ func TestDo(t *testing.T) {
 		defer cancel()
 
 		gotDuration := timeFunc(func() {
-			dispatcher.New(numWorker).Do(ctx, maxIter, func() {
+			dispatcher.New(numWorker).Do(ctx, maxIter, func() { //nolint:errcheck
 				gotIter++
 				time.Sleep(interval)
 			})
@@ -125,7 +125,7 @@ func TestDo(t *testing.T) {
 		}()
 
 		gotDuration := timeFunc(func() {
-			dispatcher.New(numWorker).Do(ctx, maxIter, func() {
+			dispatcher.New(numWorker).Do(ctx, maxIter, func() { //nolint:errcheck
 				time.Sleep(interval)
 			})
 		})
@@ -163,7 +163,7 @@ func TestDo(t *testing.T) {
 			gotNumGoroutines = make([]int, 0, maxIter)
 		)
 
-		dispatcher.New(numWorker).Do(context.Background(), maxIter, func() {
+		dispatcher.New(numWorker).Do(context.Background(), maxIter, func() { //nolint:errcheck
 			mu.Lock()
 			gotNumGoroutines = append(gotNumGoroutines, runtime.NumGoroutine()-baseNumGoroutine)
 			mu.Unlock()
@@ -199,7 +199,7 @@ func TestDo(t *testing.T) {
 		)
 
 		start := time.Now()
-		dispatcher.New(numWorker).Do(context.Background(), maxIter, func() {
+		dispatcher.New(numWorker).Do(context.Background(), maxIter, func() { //nolint:errcheck
 			mu.Lock()
 			elapsedTimes = append(elapsedTimes, time.Since(start))
 			mu.Unlock()
@@ -240,6 +240,53 @@ func TestDo(t *testing.T) {
 		}
 
 		t.Log(elapsedTimes)
+	})
+}
+
+func TestValidate(t *testing.T) {
+	t.Run("return error if maxIter < 1", func(t *testing.T) {
+		const (
+			numWorker = 10
+			maxIter   = 0
+			expMsg    = "invalid value: maxIter: must be < 1, got 0"
+		)
+
+		err := dispatcher.New(numWorker).Do(context.Background(), maxIter, func() {})
+		checkErrorMessage(t, err, expMsg)
+	})
+
+	t.Run("return error if maxIter < numWorker", func(t *testing.T) {
+		const (
+			numWorker = 10
+			maxIter   = 5
+			expMsg    = "invalid value: maxIter: must be >= numWorker (10), got 5"
+		)
+
+		err := dispatcher.New(numWorker).Do(context.Background(), maxIter, func() {})
+		checkErrorMessage(t, err, expMsg)
+	})
+
+	t.Run("return error if callback == nil", func(t *testing.T) {
+		const (
+			numWorker = 10
+			maxIter   = 20
+			expMsg    = "invalid value: callback: must be non-nil"
+		)
+
+		err := dispatcher.New(numWorker).Do(context.Background(), maxIter, nil)
+		checkErrorMessage(t, err, expMsg)
+	})
+
+	t.Run("return nil if values are valid", func(t *testing.T) {
+		const (
+			numWorker = 10
+			maxIter   = 20
+		)
+
+		err := dispatcher.New(numWorker).Do(context.Background(), maxIter, func() {})
+		if err != nil {
+			t.Errorf("unexpected error: %s", err.Error())
+		}
 	})
 }
 
@@ -284,39 +331,13 @@ func timeFunc(f func()) time.Duration {
 	return time.Since(start)
 }
 
-// AssertPanicMessage fails t if the calling func does not panic
-// with the expected message. It must be called with defer:
-//
-// 	func TestFuncThatPanics(t *testing.T) {
-// 		defer testutil.AssertPanicMessage(t, "oops, I panicked")
-// 		FuncThatPanics()
-// 	}
-func AssertPanicMessage(t *testing.T, expMessage string) {
+func checkErrorMessage(t *testing.T, err error, expMsg string) {
 	t.Helper()
-	r := recover()
-	assertPanicked(t, r, expMessage, true)
-}
-
-// AssertPanic fails t if the calling func does not panic.
-// It must be called with defer:
-//
-// 	func TestFuncThatPanics(t *testing.T) {
-// 		defer testutil.AssertPanic(t)
-// 		FuncThatPanics()
-// 	}
-func AssertPanic(t *testing.T) {
-	t.Helper()
-	r := recover()
-	assertPanicked(t, r, "", false)
-}
-
-func assertPanicked(t *testing.T, rec interface{}, msg string, checkmsg bool) {
-	t.Helper()
-	if rec == nil {
-		t.Error("expected to panic but did not")
+	if err == nil {
+		t.Error("expect non-nil error, got nil")
 		return
 	}
-	if checkmsg && msg != fmt.Sprint(rec) {
-		t.Errorf("bad panic message:\nexp %s\ngot %s", msg, rec)
+	if gotMsg := err.Error(); gotMsg != expMsg {
+		t.Errorf("unexpected error:\nexp %s\ngot %s", expMsg, gotMsg)
 	}
 }
