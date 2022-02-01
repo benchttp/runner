@@ -2,6 +2,7 @@ package dispatcher_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"runtime"
 	"sync"
@@ -244,50 +245,51 @@ func TestDo(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	t.Run("return error if maxIter < 1", func(t *testing.T) {
-		const (
-			numWorker = 10
-			maxIter   = 0
-			expMsg    = "invalid value: maxIter: must be < 1, got 0"
-		)
+	testcases := []struct {
+		label     string
+		exp       error
+		numWorker int
+		maxIter   int
+		callback  func()
+	}{
+		{
+			label:     "return error if maxIter < 1",
+			exp:       errors.New("invalid value: maxIter: must be < 1, got 0"),
+			numWorker: 10,
+			maxIter:   0,
+			callback:  func() {},
+		},
+		{
+			label:     "return error if maxIter < numWorker",
+			exp:       errors.New("invalid value: maxIter: must be >= numWorker (10), got 5"),
+			numWorker: 10,
+			maxIter:   5,
+			callback:  func() {},
+		},
+		{
+			label:     "return error if callback == nil",
+			exp:       errors.New("invalid value: callback: must be non-nil"),
+			numWorker: 10,
+			maxIter:   20,
+			callback:  nil,
+		},
+		{
+			label:     "return nil if values are valid",
+			exp:       nil,
+			numWorker: 10,
+			maxIter:   20,
+			callback:  func() {},
+		},
+	}
 
-		err := dispatcher.New(numWorker).Do(context.Background(), maxIter, func() {})
-		checkErrorMessage(t, err, expMsg)
-	})
-
-	t.Run("return error if maxIter < numWorker", func(t *testing.T) {
-		const (
-			numWorker = 10
-			maxIter   = 5
-			expMsg    = "invalid value: maxIter: must be >= numWorker (10), got 5"
-		)
-
-		err := dispatcher.New(numWorker).Do(context.Background(), maxIter, func() {})
-		checkErrorMessage(t, err, expMsg)
-	})
-
-	t.Run("return error if callback == nil", func(t *testing.T) {
-		const (
-			numWorker = 10
-			maxIter   = 20
-			expMsg    = "invalid value: callback: must be non-nil"
-		)
-
-		err := dispatcher.New(numWorker).Do(context.Background(), maxIter, nil)
-		checkErrorMessage(t, err, expMsg)
-	})
-
-	t.Run("return nil if values are valid", func(t *testing.T) {
-		const (
-			numWorker = 10
-			maxIter   = 20
-		)
-
-		err := dispatcher.New(numWorker).Do(context.Background(), maxIter, func() {})
-		if err != nil {
-			t.Errorf("unexpected error: %s", err.Error())
-		}
-	})
+	for _, tc := range testcases {
+		t.Run(tc.label, func(t *testing.T) {
+			got := dispatcher.New(tc.numWorker).Do(context.Background(), tc.maxIter, tc.callback)
+			if got != nil && got.Error() != tc.exp.Error() {
+				t.Errorf("unexpected error value:\nexp %v\ngot %v", tc.exp, got)
+			}
+		})
+	}
 }
 
 // helpers
@@ -329,15 +331,4 @@ func timeFunc(f func()) time.Duration {
 	start := time.Now()
 	f()
 	return time.Since(start)
-}
-
-func checkErrorMessage(t *testing.T, err error, expMsg string) {
-	t.Helper()
-	if err == nil {
-		t.Error("expect non-nil error, got nil")
-		return
-	}
-	if gotMsg := err.Error(); gotMsg != expMsg {
-		t.Errorf("unexpected error:\nexp %s\ngot %s", expMsg, gotMsg)
-	}
 }
