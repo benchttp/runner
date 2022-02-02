@@ -36,9 +36,8 @@ func (r *Requester) collect() Report {
 	for rec := range r.records {
 		if rec.Error != nil {
 			rep.Fail++
-		} else {
-			rep.Records = append(rep.Records, rec)
 		}
+		rep.Records = append(rep.Records, rec)
 	}
 	rep.Length = len(rep.Records)
 	rep.Success = rep.Length - rep.Fail
