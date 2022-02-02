@@ -53,21 +53,21 @@ func (r *Requester) collect() (Report, error) {
 func (r *Requester) Report(url string, report Report) error {
 	body := bytes.Buffer{}
 	if err := json.NewEncoder(&body).Encode(report); err != nil {
-		return fmt.Errorf("error sending the report: %s", err)
+		return fmt.Errorf("%w: %s", ErrReporting, err)
 	}
 
 	req, err := http.NewRequest("POST", url, &body)
 	if err != nil {
-		return fmt.Errorf("error sending the report: %s", err)
+		return fmt.Errorf("%w: %s", ErrReporting, err)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("error sending the report: %s", err)
+		return fmt.Errorf("%w: %s", ErrReporting, err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("error sending the report: %s", resp.Status)
+		return fmt.Errorf("%w: %s", ErrReporting, resp.Status)
 	}
 
 	return nil
