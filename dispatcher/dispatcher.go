@@ -30,7 +30,7 @@ func (d dispatcher) Do(ctx context.Context, maxIter int, callback func()) error 
 
 	wg := sync.WaitGroup{}
 
-	for i := 0; i < maxIter || maxIter == 0; i++ {
+	for i := 0; i < maxIter || maxIter == -1; i++ {
 		wg.Add(1)
 
 		if err := d.sem.Acquire(ctx, 1); err != nil {
@@ -54,10 +54,10 @@ func (d dispatcher) Do(ctx context.Context, maxIter int, callback func()) error 
 }
 
 func (d dispatcher) validate(maxIter int, callback func()) error {
-	if maxIter < 1 {
-		return fmt.Errorf("%w: maxIter: must be < 1, got %d", ErrInvalidValue, maxIter)
+	if maxIter < 1 && maxIter != -1 {
+		return fmt.Errorf("%w: maxIter: must be -1 or >= 1, got %d", ErrInvalidValue, maxIter)
 	}
-	if maxIter < d.numWorker {
+	if maxIter < d.numWorker && maxIter != -1 {
 		return fmt.Errorf(
 			"%w: maxIter: must be >= numWorker (%d), got %d",
 			ErrInvalidValue, d.numWorker, maxIter,
