@@ -69,14 +69,15 @@ func TestDo(t *testing.T) {
 			timeout   = 100 * time.Millisecond
 			interval  = timeout / 10
 			numWorker = 1
+			maxIter   = -1
 
 			margin      = 25 * time.Millisecond // determined empirically
 			maxDuration = timeout + margin
 		)
 
 		var (
-			maxIter = int(interval.Milliseconds()) + 1 // should not be reached
-			gotIter = 0
+			expIterMax = int(interval.Milliseconds()) + 1 // should not be reached
+			gotIter    = 0
 		)
 
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -96,10 +97,10 @@ func TestDo(t *testing.T) {
 			)
 		}
 
-		if gotIter >= maxIter {
+		if gotIter >= expIterMax {
 			t.Errorf(
 				"context timeout iterations: exp < %d, got %d",
-				maxIter, gotIter,
+				expIterMax, gotIter,
 			)
 		}
 	})
@@ -109,14 +110,15 @@ func TestDo(t *testing.T) {
 			timeout   = 100 * time.Millisecond
 			interval  = timeout / 10
 			numWorker = 1
+			maxIter   = -1
 
 			margin      = 25 * time.Millisecond // determined empirically
 			maxDuration = timeout + margin
 		)
 
 		var (
-			maxIter = int(interval.Milliseconds()) + 1 // should not be reached
-			gotIter = 0
+			expIterMax = int(interval.Milliseconds()) + 1 // should not be reached
+			gotIter    = 0
 		)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -138,10 +140,10 @@ func TestDo(t *testing.T) {
 			)
 		}
 
-		if gotIter >= maxIter {
+		if gotIter >= expIterMax {
 			t.Errorf(
 				"context timeout iterations: exp < %d, got %d",
-				maxIter, gotIter,
+				expIterMax, gotIter,
 			)
 		}
 	})
@@ -253,10 +255,17 @@ func TestValidate(t *testing.T) {
 		callback  func()
 	}{
 		{
-			label:     "return error if maxIter < 1",
-			exp:       errors.New("invalid value: maxIter: must be < 1, got 0"),
+			label:     "return error if maxIter == 0",
+			exp:       errors.New("invalid value: maxIter: must be -1 or >= 1, got 0"),
 			numWorker: 10,
 			maxIter:   0,
+			callback:  func() {},
+		},
+		{
+			label:     "return error if maxIter == -2",
+			exp:       errors.New("invalid value: maxIter: must be -1 or >= 1, got -2"),
+			numWorker: 10,
+			maxIter:   -2,
 			callback:  func() {},
 		},
 		{
@@ -274,17 +283,27 @@ func TestValidate(t *testing.T) {
 			callback:  nil,
 		},
 		{
-			label:     "return nil if values are valid",
+			label:     "return nil if values are valid (maxIter == 1)",
 			exp:       nil,
-			numWorker: 10,
-			maxIter:   20,
+			numWorker: 1,
+			maxIter:   1,
+			callback:  func() {},
+		},
+		{
+			label:     "return nil if values are valid (maxIter == -1)",
+			exp:       nil,
+			numWorker: 1,
+			maxIter:   -1,
 			callback:  func() {},
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.label, func(t *testing.T) {
-			got := dispatcher.New(tc.numWorker).Do(context.Background(), tc.maxIter, tc.callback)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+			defer cancel()
+
+			got := dispatcher.New(tc.numWorker).Do(ctx, tc.maxIter, tc.callback)
 			if got != nil && got.Error() != tc.exp.Error() {
 				t.Errorf("unexpected error value:\nexp %v\ngot %v", tc.exp, got)
 			}
