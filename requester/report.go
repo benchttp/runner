@@ -9,6 +9,10 @@ import (
 	"github.com/benchttp/runner/config"
 )
 
+const (
+	defaultRecordsCap = 128
+)
+
 // Report represents the collected results of a benchmark test.
 type Report struct {
 	Config  config.Config `json:"config"`
@@ -28,9 +32,14 @@ func (rep Report) String() string {
 // Returns the report when all the records have been collected.
 // Requester.collect will blocks until Requester.Records is empty.
 func (r *Requester) collect() (Report, error) {
+	recordsCap := defaultRecordsCap
+	if r.config.RunnerOptions.Requests > 0 {
+		recordsCap = r.config.RunnerOptions.Requests
+	}
+
 	rep := Report{
 		Config:  r.config,
-		Records: make([]Record, 0, r.config.RunnerOptions.Requests), // Provide capacity if known.
+		Records: make([]Record, 0, recordsCap), // Provide capacity if known.
 	}
 
 	for rec := range r.recordC {

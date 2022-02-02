@@ -27,7 +27,7 @@ type Requester struct {
 func New(cfg config.Config) *Requester {
 	tracer := newTracer()
 	return &Requester{
-		recordC: make(chan Record, cfg.RunnerOptions.Requests),
+		recordC: make(chan Record),
 		errC:    make(chan error),
 		config:  cfg,
 		tracer:  tracer,
