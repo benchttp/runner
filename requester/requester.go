@@ -2,12 +2,19 @@ package requester
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
 
 	"github.com/benchttp/runner/config"
 	"github.com/benchttp/runner/dispatcher"
+)
+
+var (
+	ErrRequest    = errors.New("invalid request")
+	ErrConnection = errors.New("connection error")
 )
 
 // Requester executes the benchmark. It wraps http.Client.
@@ -19,7 +26,9 @@ type Requester struct {
 	tracer *tracer
 }
 
-// New returns a Requester configured with specified Options.
+// New returns a Requester initialized with cfg. cfg is assumed valid:
+// it is the caller's responsibility to ensure cfg is valid using
+// cfg.Validate.
 func New(cfg config.Config) *Requester {
 	tracer := newTracer()
 	return &Requester{
@@ -43,11 +52,11 @@ func New(cfg config.Config) *Requester {
 func (r *Requester) Run() (Report, error) {
 	req, err := r.config.HTTPRequest()
 	if err != nil {
-		return Report{}, err
+		return Report{}, fmt.Errorf("%w: %s", ErrRequest, err)
 	}
 
 	if err := r.ping(req); err != nil {
-		return Report{}, err
+		return Report{}, fmt.Errorf("%w: %s", ErrConnection, err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), r.config.RunnerOptions.GlobalTimeout)
