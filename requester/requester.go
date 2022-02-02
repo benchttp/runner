@@ -2,7 +2,6 @@ package requester
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,11 +9,6 @@ import (
 
 	"github.com/benchttp/runner/config"
 	"github.com/benchttp/runner/dispatcher"
-)
-
-var (
-	ErrRequest    = errors.New("invalid request")
-	ErrConnection = errors.New("connection error")
 )
 
 // Requester executes the benchmark. It wraps http.Client.
