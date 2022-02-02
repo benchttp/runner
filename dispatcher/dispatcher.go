@@ -20,6 +20,15 @@ type dispatcher struct {
 	sem       *semaphore.Weighted
 }
 
+// New returns a Dispatcher initialized with numWorker.
+func New(numWorker int) Dispatcher {
+	if numWorker < 1 {
+		panic(fmt.Sprintf("invalid numWorker value: must be > 1, got %d", numWorker))
+	}
+	sem := semaphore.NewWeighted(int64(numWorker))
+	return dispatcher{sem: sem, numWorker: numWorker}
+}
+
 // Do concurrently executes callback at most maxIter times or until ctx is done
 // or canceled. Concurrency is handled leveraging the semaphore pattern, which
 // ensures at most Dispatcher.numWorkers goroutines are spawned at the same time.
@@ -67,13 +76,4 @@ func (d dispatcher) validate(maxIter int, callback func()) error {
 		return fmt.Errorf("%w: callback: must be non-nil", ErrInvalidValue)
 	}
 	return nil
-}
-
-// New returns a Dispatcher initialized with numWorker.
-func New(numWorker int) Dispatcher {
-	if numWorker < 1 {
-		panic(fmt.Sprintf("invalid numWorker value: must be > 1, got %d", numWorker))
-	}
-	sem := semaphore.NewWeighted(int64(numWorker))
-	return dispatcher{sem: sem, numWorker: numWorker}
 }
