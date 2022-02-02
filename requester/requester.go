@@ -19,7 +19,8 @@ var (
 
 // Requester executes the benchmark. It wraps http.Client.
 type Requester struct {
-	records chan Record // Records provides read access to the results of Requester.Run.
+	recordC chan Record // Records provides read access to the results of Requester.Run.
+	errC    chan error
 
 	config config.Config
 	client http.Client
@@ -32,7 +33,8 @@ type Requester struct {
 func New(cfg config.Config) *Requester {
 	tracer := newTracer()
 	return &Requester{
-		records: make(chan Record, cfg.RunnerOptions.Requests),
+		recordC: make(chan Record, cfg.RunnerOptions.Requests),
+		errC:    make(chan error),
 		config:  cfg,
 		tracer:  tracer,
 		client: http.Client{
@@ -60,22 +62,17 @@ func (r *Requester) Run() (Report, error) {
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), r.config.RunnerOptions.GlobalTimeout)
-	errCh := make(chan error)
 
 	go func() {
 		defer cancel()
-		defer close(r.records)
+		defer close(r.recordC)
 
-		errCh <- dispatcher.
+		r.errC <- dispatcher.
 			New(r.config.RunnerOptions.Concurrency).
 			Do(ctx, r.config.RunnerOptions.Requests, r.record(req))
 	}()
 
-	if err := <-errCh; err != nil {
-		return Report{}, err
-	}
-
-	return r.collect(), nil
+	return r.collect()
 }
 
 func (r *Requester) ping(req *http.Request) error {
@@ -104,18 +101,18 @@ func (r *Requester) record(req *http.Request) func() {
 
 		resp, err := r.client.Do(req)
 		if err != nil {
-			r.records <- Record{Error: err}
+			r.recordC <- Record{Error: err}
 			return
 		}
 
 		body, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 		if err != nil {
-			r.records <- Record{Error: err}
+			r.recordC <- Record{Error: err}
 			return
 		}
 
-		r.records <- Record{
+		r.recordC <- Record{
 			Code:   resp.StatusCode,
 			Time:   time.Since(sent),
 			Bytes:  len(body),

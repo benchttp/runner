@@ -27,13 +27,18 @@ func (rep Report) String() string {
 // they are available and consumes them to build the report.
 // Returns the report when all the records have been collected.
 // Requester.collect will blocks until Requester.Records is empty.
-func (r *Requester) collect() Report {
+func (r *Requester) collect() (Report, error) {
 	rep := Report{
 		Config:  r.config,
 		Records: make([]Record, 0, r.config.RunnerOptions.Requests), // Provide capacity if known.
 	}
 
-	for rec := range r.records {
+	for rec := range r.recordC {
+		select {
+		case err := <-r.errC:
+			return Report{}, err
+		default:
+		}
 		if rec.Error != nil {
 			rep.Fail++
 		}
@@ -41,7 +46,7 @@ func (r *Requester) collect() Report {
 	}
 	rep.Length = len(rep.Records)
 	rep.Success = rep.Length - rep.Fail
-	return rep
+	return rep, nil
 }
 
 // Report sends the report to url. Returns any non-nil error that occurred.
