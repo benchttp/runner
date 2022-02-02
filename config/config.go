@@ -39,11 +39,15 @@ func (cfg Config) String() string {
 // HTTPRequest returns a *http.Request created from Target. Returns any non-nil
 // error that occurred.
 func (cfg Config) HTTPRequest() (*http.Request, error) {
-	return http.NewRequest(
-		cfg.Request.Method,
-		cfg.Request.URL.String(),
-		nil, // TODO: handle body
-	)
+	if cfg.Request.URL == nil {
+		return nil, errors.New("empty url")
+	}
+	rawURL := cfg.Request.URL.String()
+	if _, err := url.ParseRequestURI(rawURL); err != nil {
+		return nil, errors.New("bad url")
+	}
+	// TODO: handle body
+	return http.NewRequest(cfg.Request.Method, rawURL, nil)
 }
 
 // New returns a Config initialized with given parameters. The returned Config
