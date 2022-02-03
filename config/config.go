@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -73,7 +74,7 @@ func New(uri string, requests, concurrency int, requestTimeout, globalTimeout ti
 }
 
 // Validate returns the config and a not nil ErrInvalid if any of the fields provided by the user is not valid
-func (cfg Config) Validate() error { //nolint
+func (cfg Config) Validate() error { //nolint:gocognit
 	inputErrors := []error{}
 
 	_, err := url.ParseRequestURI(cfg.Request.URL.String())
