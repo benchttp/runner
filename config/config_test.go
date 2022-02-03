@@ -47,3 +47,32 @@ func TestNew(t *testing.T) {
 		}
 	})
 }
+
+func TestOverride(t *testing.T) {
+	t.Run("do not override unspecified fields", func(t *testing.T) {
+		baseCfg := config.Config{}
+		newCfg := config.New("http://a.b?p=2", 1, 2, 3, 4)
+
+		if gotCfg := baseCfg.Override(newCfg); gotCfg != baseCfg {
+			t.Errorf("overrode unexpected fields:\nexp %#v\ngot %#v", baseCfg, gotCfg)
+		}
+	})
+
+	t.Run("override specified fields", func(t *testing.T) {
+		baseCfg := config.Config{}
+		newCfg := config.New("http://a.b?p=2", 1, 2, 3, 4)
+		fields := []config.Field{
+			config.FieldMethod,
+			config.FieldURL,
+			config.FieldTimeout,
+			config.FieldRequests,
+			config.FieldConcurrency,
+			config.FieldGlobalTimeout,
+		}
+
+		if gotCfg := baseCfg.Override(newCfg, fields...); !reflect.DeepEqual(gotCfg, newCfg) {
+			t.Errorf("did not override expected fields:\nexp %v\ngot %v", baseCfg, gotCfg)
+			t.Log(fields)
+		}
+	})
+}
