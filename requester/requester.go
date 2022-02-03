@@ -5,30 +5,42 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/benchttp/runner/config"
 	"github.com/benchttp/runner/dispatcher"
 )
 
+const (
+	defaultRecordsCap = 1000
+)
+
 // Requester executes the benchmark. It wraps http.Client.
 type Requester struct {
-	recordC chan Record // Records provides read access to the results of Requester.Run.
-	errC    chan error
+	records []Record
+	numErr  int
 
 	config config.Config
 	client http.Client
 	tracer *tracer
+
+	mu sync.Mutex
 }
 
 // New returns a Requester initialized with cfg. cfg is assumed valid:
 // it is the caller's responsibility to ensure cfg is valid using
 // cfg.Validate.
 func New(cfg config.Config) *Requester {
+	recordsCap := cfg.RunnerOptions.Requests
+	if recordsCap < 1 {
+		recordsCap = defaultRecordsCap
+	}
+
 	tracer := newTracer()
+
 	return &Requester{
-		recordC: make(chan Record),
-		errC:    make(chan error),
+		records: make([]Record, 0, recordsCap),
 		config:  cfg,
 		tracer:  tracer,
 		client: http.Client{
@@ -55,18 +67,20 @@ func (r *Requester) Run() (Report, error) {
 		return Report{}, fmt.Errorf("%w: %s", ErrConnection, err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), r.config.RunnerOptions.GlobalTimeout)
+	var (
+		numWorker   = r.config.RunnerOptions.Concurrency
+		maxIter     = r.config.RunnerOptions.Requests
+		timeout     = r.config.RunnerOptions.GlobalTimeout
+		ctx, cancel = context.WithTimeout(context.Background(), timeout)
+	)
 
-	go func() {
-		defer cancel()
-		defer close(r.recordC)
+	defer cancel()
 
-		r.errC <- dispatcher.
-			New(r.config.RunnerOptions.Concurrency).
-			Do(ctx, r.config.RunnerOptions.Requests, r.record(req))
-	}()
+	if err := dispatcher.New(numWorker).Do(ctx, maxIter, r.record(req)); err != nil {
+		return Report{}, err
+	}
 
-	return r.collect()
+	return r.report(), nil
 }
 
 func (r *Requester) ping(req *http.Request) error {
@@ -95,22 +109,33 @@ func (r *Requester) record(req *http.Request) func() {
 
 		resp, err := r.client.Do(req)
 		if err != nil {
-			r.recordC <- Record{Error: err}
+			r.appendRecord(Record{Error: err})
 			return
 		}
 
 		body, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 		if err != nil {
-			r.recordC <- Record{Error: err}
+			r.appendRecord(Record{Error: err})
 			return
 		}
 
-		r.recordC <- Record{
+		duration := time.Since(sent)
+
+		r.appendRecord(Record{
 			Code:   resp.StatusCode,
-			Time:   time.Since(sent),
+			Time:   duration,
 			Bytes:  len(body),
 			Events: r.tracer.events,
-		}
+		})
+	}
+}
+
+func (r *Requester) appendRecord(rec Record) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.records = append(r.records, rec)
+	if rec.Error != nil {
+		r.numErr++
 	}
 }

@@ -26,12 +26,12 @@ func TestRun(t *testing.T) {
 	}{
 		{
 			label: "return ErrRequest early on request error",
-			req:   New(config.New(badURL, 0, 0, 0, 0)),
+			req:   New(config.New(badURL, -1, 1, 0, 0)),
 			exp:   ErrRequest,
 		},
 		{
 			label: "return ErrConnection early on connection error",
-			req:   New(config.New(goodURL, 0, 0, 0, 0)),
+			req:   New(config.New(goodURL, -1, 1, 0, 0)),
 			exp:   ErrConnection,
 		},
 		{
@@ -50,7 +50,7 @@ func TestRun(t *testing.T) {
 			}
 
 			if !reflect.ValueOf(gotRep).IsZero() {
-				t.Errorf("report value:\nexp %v, got %v", Report{}, gotRep)
+				t.Errorf("report value:\nexp %v\ngot %v", Report{}, gotRep)
 			}
 		})
 	}
@@ -79,7 +79,7 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("happy path", func(t *testing.T) {
-		r := withNoopTransport(New(config.New(goodURL, 1, 1, time.Second, time.Minute)))
+		r := withNoopTransport(New(config.New(goodURL, 1, 1, time.Second, 2*time.Second)))
 
 		rep, err := r.Run()
 		if err != nil {
