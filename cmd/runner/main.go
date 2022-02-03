@@ -68,10 +68,12 @@ func parseConfig() config.Config {
 }
 
 // flagNames returns a slice of all flags set.
-func flagNames() []string {
-	var fields []string
+func flagNames() []config.Field {
+	var fields []config.Field
 	flag.CommandLine.Visit(func(f *flag.Flag) {
-		fields = append(fields, f.Name)
+		if name := f.Name; config.IsField(name) {
+			fields = append(fields, config.Field(name))
+		}
 	})
 	return fields
 }

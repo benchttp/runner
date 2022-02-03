@@ -47,21 +47,22 @@ func (cfg Config) HTTPRequest() (*http.Request, error) {
 }
 
 // Override returns a new Config based on cfg with overridden values from c.
-// Only fields specified in options are replaced. Accepted options are:
-// "url", "timeout", "requests", "concurrency", "globalTimeout".
-// Other values are silently ignored.
-func (cfg Config) Override(c Config, options ...string) Config {
-	for _, option := range options {
-		switch option {
-		case "url":
+// Only fields specified in options are replaced. Accepted options are limited
+// to existing Fields, other values are silently ignored.
+func (cfg Config) Override(c Config, fields ...Field) Config {
+	for _, field := range fields {
+		switch field {
+		case FieldMethod:
+			cfg.Request.Method = c.Request.Method
+		case FieldURL:
 			cfg.Request.URL = c.Request.URL
-		case "timeout":
+		case FieldTimeout:
 			cfg.Request.Timeout = c.Request.Timeout
-		case "requests":
+		case FieldRequests:
 			cfg.RunnerOptions.Requests = c.RunnerOptions.Requests
-		case "concurrency":
+		case FieldConcurrency:
 			cfg.RunnerOptions.Concurrency = c.RunnerOptions.Concurrency
-		case "globalTimeout":
+		case FieldGlobalTimeout:
 			cfg.RunnerOptions.GlobalTimeout = c.RunnerOptions.GlobalTimeout
 		}
 	}

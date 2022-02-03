@@ -36,11 +36,11 @@ func Parse(cfgpath string) (cfg config.Config, err error) {
 // or the first non-nil error occurring in the process.
 func parseRawConfig(raw unmarshaledConfig) (config.Config, error) {
 	cfg := config.Config{}
-	fields := make([]string, 0, 6)
+	fields := make([]config.Field, 0, 6)
 
 	if method := raw.Request.Method; method != nil {
 		cfg.Request.Method = *method
-		fields = append(fields, "method")
+		fields = append(fields, config.FieldMethod)
 	}
 
 	if rawURL := raw.Request.URL; rawURL != nil {
@@ -49,7 +49,7 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) {
 			return config.Config{}, err
 		}
 		cfg.Request.URL = parsedURL
-		fields = append(fields, "url")
+		fields = append(fields, config.FieldURL)
 	}
 
 	if timeout := raw.Request.Timeout; timeout != nil {
@@ -58,17 +58,17 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) {
 			return config.Config{}, err
 		}
 		cfg.Request.Timeout = parsedTimeout
-		fields = append(fields, "timeout")
+		fields = append(fields, config.FieldTimeout)
 	}
 
 	if requests := raw.RunnerOptions.Requests; requests != nil {
 		cfg.RunnerOptions.Requests = *requests
-		fields = append(fields, "requests")
+		fields = append(fields, config.FieldRequests)
 	}
 
 	if concurrency := raw.RunnerOptions.Concurrency; concurrency != nil {
 		cfg.RunnerOptions.Concurrency = *concurrency
-		fields = append(fields, "concurrency")
+		fields = append(fields, config.FieldConcurrency)
 	}
 
 	if globalTimeout := raw.RunnerOptions.GlobalTimeout; globalTimeout != nil {
@@ -77,7 +77,7 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) {
 			return config.Config{}, err
 		}
 		cfg.RunnerOptions.GlobalTimeout = parsedGlobalTimeout
-		fields = append(fields, "globalTimeout")
+		fields = append(fields, config.FieldGlobalTimeout)
 	}
 
 	fmt.Println(fields)
