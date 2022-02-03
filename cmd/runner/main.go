@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -22,7 +21,7 @@ var (
 	uri           string
 	concurrency   int           // Number of connections to run concurrently
 	requests      int           // Number of requests to run, use duration as exit condition if omitted.
-	timeout       time.Duration // Timeout for each http request
+	timeout       time.Duration // Timeout for each HTTP request
 	globalTimeout time.Duration // Duration of test
 )
 
@@ -37,7 +36,7 @@ func parseArgs() {
 	flag.StringVar(&uri, "url", "", "Target URL to request")
 	flag.IntVar(&concurrency, "concurrency", 0, "Number of connections to run concurrently")
 	flag.IntVar(&requests, "requests", 0, "Number of requests to run, use duration as exit condition if omitted")
-	flag.DurationVar(&timeout, "timeout", 0, "Timeout for each http request")
+	flag.DurationVar(&timeout, "timeout", 0, "Timeout for each HTTP request")
 	flag.DurationVar(&globalTimeout, "globalTimeout", 0, "Duration of test")
 	flag.Parse()
 }
@@ -45,8 +44,10 @@ func parseArgs() {
 func main() {
 	parseArgs()
 
-	cfg := parseConfig()
-	fmt.Println(cfg)
+	cfg, err := parseConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if err := requester.New(cfg).RunAndReport(serverURL); err != nil {
 		log.Fatal(err)
@@ -55,7 +56,7 @@ func main() {
 
 // parseConfig returns a config.Config initialized with config file
 // options if found, overridden with CLI options.
-func parseConfig() config.Config {
+func parseConfig() (config.Config, error) {
 	fileCfg, err := configfile.Parse(configFile)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		// config file is not mandatory, other errors are critical
@@ -64,7 +65,9 @@ func parseConfig() config.Config {
 
 	cliCfg := config.New(uri, requests, concurrency, timeout, globalTimeout)
 
-	return fileCfg.Override(cliCfg, flagNames()...)
+	mergedConfig := fileCfg.Override(cliCfg, flagNames()...)
+
+	return mergedConfig, mergedConfig.Validate()
 }
 
 // flagNames returns a slice of all flags set.
