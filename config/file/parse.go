@@ -34,7 +34,7 @@ func Parse(cfgpath string) (cfg config.Config, err error) {
 
 // parseRawConfig parses an input raw config as a config.Config and returns it
 // or the first non-nil error occurring in the process.
-func parseRawConfig(raw unmarshaledConfig) (config.Config, error) {
+func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:gocognit // acceptable complexity for a parsing func
 	cfg := config.Config{}
 	fields := make([]config.Field, 0, 6)
 
