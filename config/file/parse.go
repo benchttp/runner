@@ -1,7 +1,6 @@
 package file
 
 import (
-	"fmt"
 	"net/url"
 	"os"
 	"path"
@@ -79,8 +78,6 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:goc
 		cfg.RunnerOptions.GlobalTimeout = parsedGlobalTimeout
 		fields = append(fields, config.FieldGlobalTimeout)
 	}
-
-	fmt.Println(fields)
 
 	return config.Default().Override(cfg, fields...), nil
 }

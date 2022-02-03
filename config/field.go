@@ -13,12 +13,8 @@ const (
 
 func IsField(v string) bool {
 	switch Field(v) {
-	case FieldMethod:
-	case FieldURL:
-	case FieldTimeout:
-	case FieldRequests:
-	case FieldConcurrency:
-	case FieldGlobalTimeout:
+	case FieldMethod, FieldURL, FieldTimeout, FieldRequests,
+		FieldConcurrency, FieldGlobalTimeout:
 		return true
 	}
 	return false
