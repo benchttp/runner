@@ -1,6 +1,7 @@
 package file
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"path"
@@ -23,7 +24,7 @@ func Parse(cfgpath string) (cfg config.Config, err error) {
 		return
 	}
 
-	var rawCfg rawConfig
+	var rawCfg unmarshaledConfig
 	if err = parser.parse(b, &rawCfg); err != nil {
 		return
 	}
@@ -33,34 +34,55 @@ func Parse(cfgpath string) (cfg config.Config, err error) {
 
 // parseRawConfig parses an input raw config as a config.Config and returns it
 // or the first non-nil error occurring in the process.
-func parseRawConfig(in rawConfig) (cfg config.Config, err error) {
-	parsedURL, err := parseAndBuildURL(in.Request.URL, in.Request.QueryParams)
-	if err != nil {
-		return
+func parseRawConfig(raw unmarshaledConfig) (config.Config, error) {
+	cfg := config.Config{}
+	fields := make([]string, 0, 6)
+
+	if method := raw.Request.Method; method != nil {
+		cfg.Request.Method = *method
+		fields = append(fields, "method")
 	}
 
-	parsedRequestTimeout, err := parseOptionalDuration(in.Request.Timeout)
-	if err != nil {
-		return
+	if rawURL := raw.Request.URL; rawURL != nil {
+		parsedURL, err := parseAndBuildURL(*raw.Request.URL, raw.Request.QueryParams)
+		if err != nil {
+			return config.Config{}, err
+		}
+		cfg.Request.URL = parsedURL
+		fields = append(fields, "url")
 	}
 
-	parsedGlobalTimeout, err := parseOptionalDuration(in.RunnerOptions.GlobalTimeout)
-	if err != nil {
-		return
+	if timeout := raw.Request.Timeout; timeout != nil {
+		parsedTimeout, err := parseOptionalDuration(*timeout)
+		if err != nil {
+			return config.Config{}, err
+		}
+		cfg.Request.Timeout = parsedTimeout
+		fields = append(fields, "timeout")
 	}
 
-	return config.MergeDefault(config.Config{
-		Request: config.Request{
-			Method:  in.Request.Method,
-			URL:     parsedURL,
-			Timeout: parsedRequestTimeout,
-		},
-		RunnerOptions: config.RunnerOptions{
-			Requests:      in.RunnerOptions.Requests,
-			Concurrency:   in.RunnerOptions.Concurrency,
-			GlobalTimeout: parsedGlobalTimeout,
-		},
-	}), nil
+	if requests := raw.RunnerOptions.Requests; requests != nil {
+		cfg.RunnerOptions.Requests = *requests
+		fields = append(fields, "requests")
+	}
+
+	if concurrency := raw.RunnerOptions.Concurrency; concurrency != nil {
+		cfg.RunnerOptions.Concurrency = *concurrency
+		fields = append(fields, "concurrency")
+	}
+
+	if globalTimeout := raw.RunnerOptions.GlobalTimeout; globalTimeout != nil {
+		parsedGlobalTimeout, err := parseOptionalDuration(*globalTimeout)
+		if err != nil {
+			return config.Config{}, err
+		}
+		cfg.RunnerOptions.GlobalTimeout = parsedGlobalTimeout
+		fields = append(fields, "globalTimeout")
+	}
+
+	fmt.Println(fields)
+
+	return config.Default().Override(cfg, fields...), nil
 }
 
 // parseAndBuildURL parses a raw string as a *url.URL and adds any extra
@@ -73,11 +95,13 @@ func parseAndBuildURL(raw string, qp map[string]string) (*url.URL, error) {
 	}
 
 	// retrieve url query, add extra params, re-attach to url
-	q := u.Query()
-	for k, v := range qp {
-		q.Add(k, v)
+	if qp != nil {
+		q := u.Query()
+		for k, v := range qp {
+			q.Add(k, v)
+		}
+		u.RawQuery = q.Encode()
 	}
-	u.RawQuery = q.Encode()
 
 	return u, nil
 }

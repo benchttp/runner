@@ -13,7 +13,7 @@ import (
 
 const (
 	testdataConfigPath = "../../test/testdata/config"
-	testURL            = "http://localhost?foo=30&bar=200ms"
+	testURL            = "http://localhost:9999?fib=30&delay=200ms"
 )
 
 var supportedExt = []string{
