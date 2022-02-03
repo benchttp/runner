@@ -65,13 +65,13 @@ func parseConfig() (config.Config, error) {
 
 	cliCfg := config.New(uri, requests, concurrency, timeout, globalTimeout)
 
-	mergedConfig := fileCfg.Override(cliCfg, flagNames()...)
+	mergedConfig := fileCfg.Override(cliCfg, configFlags()...)
 
 	return mergedConfig, mergedConfig.Validate()
 }
 
-// flagNames returns a slice of all flags set.
-func flagNames() []config.Field {
+// configFlags returns a slice of all config fields set via the CLI.
+func configFlags() []config.Field {
 	var fields []config.Field
 	flag.CommandLine.Visit(func(f *flag.Flag) {
 		if name := f.Name; config.IsField(name) {
