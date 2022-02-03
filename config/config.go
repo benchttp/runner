@@ -96,39 +96,6 @@ func Default() Config {
 	return defaultConfig
 }
 
-// Merge returns a Config after a base Config overridden by all non-zero values
-// of override. The returned Config is not guaranteed to be safe: it must be
-// validated using Config.Validate before usage.
-func Merge(base, override Config) Config {
-	if override.Request.Method != "" {
-		base.Request.Method = override.Request.Method
-	}
-	newURL := override.Request.URL
-	if newURL != nil && newURL.String() != "" {
-		base.Request.URL = override.Request.URL
-	}
-	if override.Request.Timeout != 0 {
-		base.Request.Timeout = override.Request.Timeout
-	}
-	if override.RunnerOptions.Requests != 0 {
-		base.RunnerOptions.Requests = override.RunnerOptions.Requests
-	}
-	if override.RunnerOptions.Concurrency != 0 {
-		base.RunnerOptions.Concurrency = override.RunnerOptions.Concurrency
-	}
-	if override.RunnerOptions.GlobalTimeout != 0 {
-		base.RunnerOptions.GlobalTimeout = override.RunnerOptions.GlobalTimeout
-	}
-	return base
-}
-
-// MergeDefault merges override with the default config calling Merge.
-// The returned Config is not guaranteed to be safe: it must be validated
-// using Config.Validate before usage.
-func MergeDefault(override Config) Config {
-	return Merge(Default(), override)
-}
-
 // Validate returns an unimplemented error.
 //
 // Once implemented, Validate will return ErrInvalid if any of its fields
