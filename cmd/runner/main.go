@@ -48,7 +48,7 @@ func main() {
 	cfg := makeRunnerConfig()
 	fmt.Println(cfg)
 
-	if err := requester.New(cfg).RunAndReport(serverURL); err != nil {
+	if err := requester.New(cfg).RunAndSendReport(serverURL); err != nil {
 		log.Fatal(err)
 	}
 }

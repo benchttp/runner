@@ -9,10 +9,6 @@ import (
 	"github.com/benchttp/runner/config"
 )
 
-const (
-	defaultRecordsCap = 128
-)
-
 // Report represents the collected results of a benchmark test.
 type Report struct {
 	Config  config.Config `json:"config"`
@@ -27,39 +23,19 @@ func (rep Report) String() string {
 	return string(b)
 }
 
-// collect pulls the records from Requester.Records as soon as
-// they are available and consumes them to build the report.
-// Returns the report when all the records have been collected.
-// Requester.collect will blocks until Requester.Records is empty.
-func (r *Requester) collect() (Report, error) {
-	recordsCap := defaultRecordsCap
-	if r.config.RunnerOptions.Requests > 0 {
-		recordsCap = r.config.RunnerOptions.Requests
-	}
-
-	rep := Report{
+// report generates and returns a Report from a previous Run.
+func (r *Requester) report() Report {
+	return Report{
 		Config:  r.config,
-		Records: make([]Record, 0, recordsCap), // Provide capacity if known.
+		Records: r.records,
+		Length:  len(r.records),
+		Success: len(r.records) - r.numErr,
+		Fail:    r.numErr,
 	}
-
-	for rec := range r.recordC {
-		select {
-		case err := <-r.errC:
-			return Report{}, err
-		default:
-		}
-		if rec.Error != nil {
-			rep.Fail++
-		}
-		rep.Records = append(rep.Records, rec)
-	}
-	rep.Length = len(rep.Records)
-	rep.Success = rep.Length - rep.Fail
-	return rep, nil
 }
 
-// Report sends the report to url. Returns any non-nil error that occurred.
-func (r *Requester) Report(url string, report Report) error {
+// SendReport sends the report to url. Returns any non-nil error that occurred.
+func (r *Requester) SendReport(url string, report Report) error {
 	body := bytes.Buffer{}
 	if err := json.NewEncoder(&body).Encode(report); err != nil {
 		return fmt.Errorf("%w: %s", ErrReporting, err)
@@ -82,16 +58,16 @@ func (r *Requester) Report(url string, report Report) error {
 	return nil
 }
 
-// RunAndReport calls Run and then Report in a single
+// RunAndSendReport calls Run and then Report in a single
 // invocation. It's useful for simple usecases where the
 // caller don't need to known about the Report.
-func (r *Requester) RunAndReport(url string) error {
+func (r *Requester) RunAndSendReport(url string) error {
 	report, err := r.Run()
 	if err != nil {
 		return err
 	}
 
-	if err := r.Report(url, report); err != nil {
+	if err := r.SendReport(url, report); err != nil {
 		return err
 	}
 
