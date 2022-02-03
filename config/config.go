@@ -49,7 +49,7 @@ func (cfg Config) HTTPRequest() (*http.Request, error) {
 // Override returns a new Config based on cfg with overridden values from c.
 // Only fields specified in options are replaced. Accepted options are limited
 // to existing Fields, other values are silently ignored.
-func (cfg Config) Override(c Config, fields ...Field) Config {
+func (cfg Config) Override(c Config, fields ...string) Config {
 	for _, field := range fields {
 		switch field {
 		case FieldMethod:

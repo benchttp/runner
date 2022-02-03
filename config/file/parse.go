@@ -35,7 +35,7 @@ func Parse(cfgpath string) (cfg config.Config, err error) {
 // or the first non-nil error occurring in the process.
 func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:gocognit // acceptable complexity for a parsing func
 	cfg := config.Config{}
-	fields := make([]config.Field, 0, 6)
+	fields := make([]string, 0, 6)
 
 	if method := raw.Request.Method; method != nil {
 		cfg.Request.Method = *method

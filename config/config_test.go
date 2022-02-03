@@ -96,7 +96,7 @@ func TestOverride(t *testing.T) {
 	t.Run("override specified fields", func(t *testing.T) {
 		baseCfg := config.Config{}
 		newCfg := config.New("http://a.b?p=2", 1, 2, 3, 4)
-		fields := []config.Field{
+		fields := []string{
 			config.FieldMethod,
 			config.FieldURL,
 			config.FieldTimeout,

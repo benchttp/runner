@@ -71,11 +71,11 @@ func parseConfig() (config.Config, error) {
 }
 
 // configFlags returns a slice of all config fields set via the CLI.
-func configFlags() []config.Field {
-	var fields []config.Field
+func configFlags() []string {
+	var fields []string
 	flag.CommandLine.Visit(func(f *flag.Flag) {
 		if name := f.Name; config.IsField(name) {
-			fields = append(fields, config.Field(name))
+			fields = append(fields, name)
 		}
 	})
 	return fields
