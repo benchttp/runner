@@ -9,12 +9,25 @@ import (
 	"time"
 )
 
+type Body struct {
+	Type    string
+	Content string
+}
+
+func NewBody(bodyType, bodyContent string) Body {
+	var body Body
+	body.Type = bodyType
+	body.Content = bodyContent
+	return body
+}
+
 // Request contains the confing options relative to a single request.
 type Request struct {
 	Method  string
 	URL     *url.URL
 	Header  http.Header
 	Timeout time.Duration
+	Body    Body
 }
 
 // RunnerOptions contains options relative to the runner.
