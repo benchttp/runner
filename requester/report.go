@@ -24,13 +24,13 @@ func (rep Report) String() string {
 }
 
 // report generates and returns a Report from a previous Run.
-func (r *Requester) report() Report {
+func makeReport(cfg config.Config, records []Record, numErr int) Report {
 	return Report{
-		Config:  r.config,
-		Records: r.records,
-		Length:  len(r.records),
-		Success: len(r.records) - r.numErr,
-		Fail:    r.numErr,
+		Config:  cfg,
+		Records: records,
+		Length:  len(records),
+		Success: len(records) - numErr,
+		Fail:    numErr,
 	}
 }
 

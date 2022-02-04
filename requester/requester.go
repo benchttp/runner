@@ -80,7 +80,7 @@ func (r *Requester) Run() (Report, error) {
 		return Report{}, err
 	}
 
-	return r.report(), nil
+	return makeReport(r.config, r.records, r.numErr), nil
 }
 
 func (r *Requester) ping(req *http.Request) error {
