@@ -129,6 +129,8 @@ func (r *Requester) record(req *http.Request, interval time.Duration) func() {
 			Bytes:  len(body),
 			Events: r.tracer.events,
 		})
+
+		time.Sleep(interval)
 	}
 }
 
