@@ -28,6 +28,9 @@ var (
 	timeout       time.Duration // Timeout for each HTTP request
 	interval      time.Duration // Minimum duration between two groups of requests
 	globalTimeout time.Duration // Duration of test
+	method        string        // HTTP request method
+	bodyType      string        // HTTP body type ("application/json" accepted)
+	bodyContent   string        // HTTP request body content as JSON
 )
 
 var defaultConfigFiles = []string{
@@ -54,6 +57,10 @@ func parseArgs() {
 	flag.DurationVar(&interval, "interval", 0, "Minimum duration between two non concurrent requests")
 	// global timeout
 	flag.DurationVar(&globalTimeout, config.FieldGlobalTimeout, 0, "Max duration of test")
+	// body type
+	flag.StringVar(&bodyType, config.FieldBodyType, "", "HTTP body type")
+	// body content
+	flag.StringVar(&bodyContent, config.FieldBodyContent, "", "HTTP request body content as JSON")
 
 	flag.Parse()
 }
