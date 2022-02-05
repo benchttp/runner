@@ -1,29 +1,40 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"reflect"
-	"strings"
 	"time"
 )
 
 type Body struct {
-	Type    string
-	Content string
+	Type    string                 `json:"type"`
+	Content map[string]interface{} `json:"content"`
 }
 
-func NewBody(bodyType, bodyContent string) Body {
+func NewBody(bodyType, bodyContent string) (*Body, error) {
+	if reflect.DeepEqual("", bodyType) && reflect.DeepEqual("", bodyContent) {
+		return &Body{"", nil}, nil
+	}
 	var body Body
 	body.Type = bodyType
-	body.Content = bodyContent
-	return body
+
+	bodyContentMap := make(map[string]interface{})
+	err := json.Unmarshal([]byte(bodyContent), &bodyContentMap)
+	if err != nil {
+		return nil, errors.New("bodyContent is not valid json data")
+	}
+
+	body.Content = bodyContentMap
+
+	return &body, nil
 }
 
-var contentTypeValidValues []string = []string{"application/json"}
+var contentTypeValidValues = []string{"application/json"}
 
 // Request contains the confing options relative to a single request.
 type Request struct {
@@ -66,8 +77,16 @@ func (cfg Config) HTTPRequest() (*http.Request, error) {
 	if _, err := url.ParseRequestURI(rawURL); err != nil {
 		return nil, errors.New("bad url")
 	}
-	// TODO: handle body
-	req, err := http.NewRequest(cfg.Request.Method, rawURL, strings.NewReader(cfg.Request.Body.Content))
+
+	if reflect.ValueOf(cfg.Request.Body).IsZero() {
+		return http.NewRequest(cfg.Request.Method, rawURL, nil)
+	}
+	bodyData, err := json.Marshal(cfg.Request.Body.Content)
+	if err != nil {
+		return nil, errors.New("bad body")
+	}
+
+	req, err := http.NewRequest(cfg.Request.Method, rawURL, bytes.NewReader(bodyData))
 	if err != nil {
 		return nil, err
 	}
@@ -171,9 +190,6 @@ func (cfg Config) Validate() error { //nolint:gocognit
 		if reflect.ValueOf(cfg.Request.Body.Content).IsZero() {
 			inputErrors = append(inputErrors, fmt.Errorf("-bodyContent: you must provide a value if you have added a bodyType"))
 		}
-		if !isJSON(cfg.Request.Body.Content) {
-			inputErrors = append(inputErrors, fmt.Errorf("-bodyContent: it is not valid json, we got %s", cfg.Request.Body.Content))
-		}
 	}
 
 	if len(inputErrors) > 0 {
@@ -197,11 +213,4 @@ func contains(s []string, str string) bool {
 		}
 	}
 	return false
-}
-
-// Check that a string is valid JSON
-func isJSON(s string) bool {
-	var js map[string]interface{}
-	return json.Unmarshal([]byte(s), &js) == nil
-
 }

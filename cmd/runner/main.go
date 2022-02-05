@@ -60,8 +60,7 @@ func parseArgs() {
 	// body type
 	flag.StringVar(&bodyType, config.FieldBodyType, "", "HTTP body type")
 	// body content
-	flag.StringVar(&bodyContent, config.FieldBodyContent, "", "HTTP request body content as JSON")
-
+	flag.StringVar(&bodyContent, config.FieldBodyContent, "", "HTTP request body content as JSON (you must escape double quotes in the object)")
 	flag.Parse()
 }
 
@@ -95,13 +94,16 @@ func parseConfig() (cfg config.Config, err error) {
 		return
 	}
 
-	body := config.NewBody(bodyType, bodyContent)
+	body, err := config.NewBody(bodyType, bodyContent)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	cliCfg := config.Config{
 		Request: config.Request{
 			Header:  header,
 			Timeout: timeout,
-			Body:    body,
+			Body:    *body,
 		},
 		RunnerOptions: config.RunnerOptions{
 			Requests:      requests,
