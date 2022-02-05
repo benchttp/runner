@@ -42,13 +42,18 @@ func TestParse(t *testing.T) {
 				expErr: file.ErrFileExt,
 			},
 			{
-				label:  "invalid field",
+				label:  "yaml invalid field",
 				path:   configPath("badfield.yml"),
 				expErr: file.ErrParse,
 			},
 			{
-				label:  "invalid value",
-				path:   configPath("badvalue.yml"),
+				label:  "json invalid field",
+				path:   configPath("badfield.json"),
+				expErr: file.ErrParse,
+			},
+			{
+				label:  "json invalid value",
+				path:   configPath("badvalue.json"),
 				expErr: file.ErrParse,
 			},
 		}
