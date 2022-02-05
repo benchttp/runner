@@ -97,6 +97,10 @@ func (cfg Config) Override(c Config, fields ...string) Config {
 			cfg.RunnerOptions.Interval = c.RunnerOptions.Interval
 		case FieldGlobalTimeout:
 			cfg.RunnerOptions.GlobalTimeout = c.RunnerOptions.GlobalTimeout
+		case FieldBodyType:
+			cfg.Request.Body.Type = c.Request.Body.Type
+		case FieldBodyContent:
+			cfg.Request.Body.Content = c.Request.Body.Content
 		}
 	}
 	return cfg
