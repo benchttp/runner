@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -156,6 +157,21 @@ func (cfg Config) Validate() error { //nolint:gocognit
 		inputErrors = append(inputErrors, fmt.Errorf("-globalTimeout: must be > 0, we got %d", cfg.RunnerOptions.GlobalTimeout))
 	}
 
+	if !reflect.ValueOf(cfg.Request.Body).IsZero() {
+		if reflect.ValueOf(cfg.Request.Body.Type).IsZero() {
+			inputErrors = append(inputErrors, fmt.Errorf("-bodyType: you must provide a value if you have added a bodyContent"))
+		}
+		if !contains(contentTypeValidValues, cfg.Request.Body.Type) {
+			inputErrors = append(inputErrors, fmt.Errorf("-bodyType: invalid value, we got %s", cfg.Request.Body.Type))
+		}
+		if reflect.ValueOf(cfg.Request.Body.Content).IsZero() {
+			inputErrors = append(inputErrors, fmt.Errorf("-bodyContent: you must provide a value if you have added a bodyType"))
+		}
+		if !isJSON(cfg.Request.Body.Content) {
+			inputErrors = append(inputErrors, fmt.Errorf("-bodyContent: it is not valid json, we got %s", cfg.Request.Body.Content))
+		}
+	}
+
 	if len(inputErrors) > 0 {
 		return &ErrInvalid{inputErrors}
 	}
@@ -166,4 +182,22 @@ func (cfg Config) Validate() error { //nolint:gocognit
 // Default returns a default config that is safe to use.
 func Default() Config {
 	return defaultConfig
+}
+
+// helpers
+// Check that a value is present in a string slice
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
+}
+
+// Check that a string is valid JSON
+func isJSON(s string) bool {
+	var js map[string]interface{}
+	return json.Unmarshal([]byte(s), &js) == nil
+
 }
