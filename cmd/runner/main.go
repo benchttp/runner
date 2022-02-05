@@ -95,10 +95,13 @@ func parseConfig() (cfg config.Config, err error) {
 		return
 	}
 
+	body := config.NewBody(bodyType, bodyContent)
+
 	cliCfg := config.Config{
 		Request: config.Request{
 			Header:  header,
 			Timeout: timeout,
+			Body:    body,
 		},
 		RunnerOptions: config.RunnerOptions{
 			Requests:      requests,

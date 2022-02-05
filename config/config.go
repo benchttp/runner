@@ -22,6 +22,8 @@ func NewBody(bodyType, bodyContent string) Body {
 	return body
 }
 
+var contentTypeValidValues []string = []string{"application/json"}
+
 // Request contains the confing options relative to a single request.
 type Request struct {
 	Method  string
@@ -157,6 +159,7 @@ func (cfg Config) Validate() error { //nolint:gocognit
 	if len(inputErrors) > 0 {
 		return &ErrInvalid{inputErrors}
 	}
+
 	return nil
 }
 
