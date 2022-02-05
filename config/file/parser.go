@@ -20,6 +20,17 @@ type configParser interface {
 	parse(in []byte, dst interface{}) error
 }
 
+func newParser(ext extension) (configParser, error) {
+	switch ext {
+	case extYML, extYAML:
+		return yamlParser{}, nil
+	case extJSON:
+		return jsonParser{}, nil
+	default:
+		return nil, errors.New("unsupported config format")
+	}
+}
+
 type yamlParser struct{}
 
 func (yamlParser) parse(in []byte, dst interface{}) error {
@@ -34,17 +45,6 @@ func (jsonParser) parse(in []byte, dst interface{}) error {
 	decoder := json.NewDecoder(bytes.NewReader(in))
 	decoder.DisallowUnknownFields()
 	return decoder.Decode(dst)
-}
-
-func newParser(ext extension) (configParser, error) {
-	switch ext {
-	case extYML, extYAML:
-		return yamlParser{}, nil
-	case extJSON:
-		return jsonParser{}, nil
-	default:
-		return nil, errors.New("unsupported config format")
-	}
 }
 
 // unmarshaledConfig is a raw data model for runner config files.
