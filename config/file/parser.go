@@ -1,6 +1,7 @@
 package file
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 
@@ -15,23 +16,35 @@ const (
 	extJSON extension = ".json"
 )
 
-type configParser struct {
-	parseFunc func(in []byte, dst interface{}) error
-}
-
-func (p configParser) parse(in []byte, dst interface{}) error {
-	return p.parseFunc(in, dst)
+type configParser interface {
+	parse(in []byte, dst interface{}) error
 }
 
 func newParser(ext extension) (configParser, error) {
 	switch ext {
 	case extYML, extYAML:
-		return configParser{parseFunc: yaml.Unmarshal}, nil
+		return yamlParser{}, nil
 	case extJSON:
-		return configParser{parseFunc: json.Unmarshal}, nil
+		return jsonParser{}, nil
 	default:
-		return configParser{}, errors.New("unsupported config format")
+		return nil, errors.New("unsupported config format")
 	}
+}
+
+type yamlParser struct{}
+
+func (yamlParser) parse(in []byte, dst interface{}) error {
+	decoder := yaml.NewDecoder(bytes.NewReader(in))
+	decoder.KnownFields(true)
+	return decoder.Decode(dst)
+}
+
+type jsonParser struct{}
+
+func (jsonParser) parse(in []byte, dst interface{}) error {
+	decoder := json.NewDecoder(bytes.NewReader(in))
+	decoder.DisallowUnknownFields()
+	return decoder.Decode(dst)
 }
 
 // unmarshaledConfig is a raw data model for runner config files.
