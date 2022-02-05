@@ -21,7 +21,7 @@ var (
 	// ErrParse signals an error parsing a retrieved config file.
 	// It is returned if it contains an unexpected field or an unexpected
 	// value for a field.
-	ErrParse = errors.New("parsing error")
+	ErrParse = errors.New("parsing error: invalid config file")
 )
 
 // errWithDetails returns an error wrapping err, appended with a string

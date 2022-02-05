@@ -30,12 +30,12 @@ func Parse(cfgpath string) (cfg config.Config, err error) {
 
 	var rawCfg unmarshaledConfig
 	if err = parser.parse(b, &rawCfg); err != nil {
-		return cfg, errWithDetails(ErrParse, err)
+		return cfg, errWithDetails(ErrParse, cfgpath, err)
 	}
 
 	cfg, err = parseRawConfig(rawCfg)
 	if err != nil {
-		return cfg, errWithDetails(ErrParse, err)
+		return cfg, errWithDetails(ErrParse, cfgpath, err)
 	}
 
 	return

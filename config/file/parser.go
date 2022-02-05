@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"regexp"
 
 	"gopkg.in/yaml.v3"
@@ -69,7 +70,7 @@ func (p yamlParser) handleError(err error) error {
 		if p.isCustomFieldError(msg) {
 			continue
 		}
-		filtered.Errors = append(filtered.Errors, msg)
+		filtered.Errors = append(filtered.Errors, p.prettyErrorMessage(msg))
 	}
 
 	if len(filtered.Errors) != 0 {
@@ -88,6 +89,40 @@ func (p yamlParser) isCustomFieldError(raw string) bool {
 		`^line \d+: field (x-[\w-]+) not found in type`,
 	)
 	return customFieldRgx.MatchString(raw)
+}
+
+// prettyErrorMessage transforms a raw Decode error message into a more
+// user-friendly one by removing noisy information and returns the resulting
+// value.
+func (p yamlParser) prettyErrorMessage(raw string) string {
+	// field not found error
+	fieldNotFoundRgx := regexp.MustCompile(
+		// raw output example (type unmarshaledConfig is entirely exposed):
+		// 	line 11: field interval not found in type struct { ... }
+		`^line (\d+): field (\w+) not found in type`,
+	)
+	if matches := fieldNotFoundRgx.FindStringSubmatch(raw); len(matches) >= 3 {
+		line, field := matches[1], matches[2]
+		return fmt.Sprintf(`line %s: invalid field ("%s"): does not exist`, line, field)
+	}
+
+	// wrong field type error
+	fieldBadValueRgx := regexp.MustCompile(
+		// raw output examples:
+		// 	line 9: cannot unmarshal !!seq into int // unknown input value
+		// 	line 10: cannot unmarshal !!str `hello` into int // known input value
+		`^line (\d+): cannot unmarshal !!\w+(?: ` + "`" + `(\w+)` + "`" + `)? into (\w+)$`,
+	)
+	if matches := fieldBadValueRgx.FindStringSubmatch(raw); len(matches) >= 3 {
+		line, value, exptype := matches[1], matches[2], matches[3]
+		if value == "" {
+			return fmt.Sprintf("line %s: wrong type: want %s", line, exptype)
+		}
+		return fmt.Sprintf(`line %s: wrong type ("%s"): want %s`, line, value, exptype)
+	}
+
+	// we may not have covered all cases, return raw output in this case
+	return raw
 }
 
 // jsonParser implements configParser.
