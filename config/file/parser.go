@@ -17,10 +17,15 @@ const (
 	extJSON extension = ".json"
 )
 
+// configParser exposes a method parse to read bytes as a raw config.
 type configParser interface {
-	parse(in []byte, dst interface{}) error
+	// parse parses a raw bytes input as a raw config and stores
+	// the resulting value into dst.
+	parse(in []byte, dst *unmarshaledConfig) error
 }
 
+// newParser returns an appropriate parser according to ext, or a non-nil
+// error if ext is not an expected extension.
 func newParser(ext extension) (configParser, error) {
 	switch ext {
 	case extYML, extYAML:
@@ -32,9 +37,12 @@ func newParser(ext extension) (configParser, error) {
 	}
 }
 
+// yamlParser implements configParser.
 type yamlParser struct{}
 
-func (p yamlParser) parse(in []byte, dst interface{}) error {
+// parse decodes a raw yaml input in strict mode (unknown fields disallowed)
+// and stores the resulting value into dst.
+func (p yamlParser) parse(in []byte, dst *unmarshaledConfig) error {
 	decoder := yaml.NewDecoder(bytes.NewReader(in))
 	decoder.KnownFields(true)
 	return p.handleError(decoder.Decode(dst))
@@ -71,6 +79,8 @@ func (p yamlParser) handleError(err error) error {
 	return nil
 }
 
+// isCustomFieldError returns true if the raw error message is due
+// to an allowed custom field.
 func (p yamlParser) isCustomFieldError(raw string) bool {
 	customFieldRgx := regexp.MustCompile(
 		// raw output example:
@@ -83,7 +93,9 @@ func (p yamlParser) isCustomFieldError(raw string) bool {
 // jsonParser implements configParser.
 type jsonParser struct{}
 
-func (jsonParser) parse(in []byte, dst interface{}) error {
+// parse decodes a raw json input in strict mode (unknown fields disallowed)
+// and stores the resulting value into dst.
+func (jsonParser) parse(in []byte, dst *unmarshaledConfig) error {
 	decoder := json.NewDecoder(bytes.NewReader(in))
 	decoder.DisallowUnknownFields()
 	return decoder.Decode(dst)
