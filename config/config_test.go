@@ -11,11 +11,15 @@ import (
 	"github.com/benchttp/runner/config"
 )
 
+var emptyBody, _ = config.NewBody("", "")
+
 func TestValidate(t *testing.T) {
 	t.Run("test valid configuration", func(t *testing.T) {
+		validBody, _ := config.NewBody("application/json", "{\"key\": \"value\", \"key1\": \"value1\"}")
 		cfg := config.Config{
 			Request: config.Request{
 				Timeout: 5,
+				Body:    *validBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      5,
@@ -29,10 +33,92 @@ func TestValidate(t *testing.T) {
 		}
 	})
 
+	t.Run("test providing bodyType but no bodyContent value returns correct error", func(t *testing.T) {
+		bodyWithoutContent, _ := config.NewBody("application/json", "")
+		cfg := config.Config{
+			Request: config.Request{
+				Timeout: 5,
+				Body:    *bodyWithoutContent,
+			},
+			RunnerOptions: config.RunnerOptions{
+				Requests:      5,
+				Concurrency:   5,
+				GlobalTimeout: 5,
+			},
+		}.WithURL("github-com/benchttp")
+		err := cfg.Validate()
+		if err == nil {
+			t.Errorf("bodyType provided without bodyContent considered valid")
+		} else {
+			if !errorContains(err, "-bodyContent: you must provide a value if you have added a bodyType") {
+				t.Errorf("\n- information about bodyType provided without bodyContent missing from error message")
+			}
+		}
+	})
+
+	t.Run("test providing bodyContent but no bodyType value returns correct error", func(t *testing.T) {
+		bodyWithoutType, _ := config.NewBody("", "{\"key\": \"value\", \"key1\": \"value1\"}")
+		cfg := config.Config{
+			Request: config.Request{
+				Timeout: 5,
+				Body:    *bodyWithoutType,
+			},
+			RunnerOptions: config.RunnerOptions{
+				Requests:      5,
+				Concurrency:   5,
+				GlobalTimeout: 5,
+			},
+		}.WithURL("github-com/benchttp")
+		err := cfg.Validate()
+		if err == nil {
+			t.Errorf("bodyContent provided without bodyType considered valid")
+		} else {
+			if !errorContains(err, "-bodyType: you must provide a value if you have added a bodyContent") {
+				t.Errorf("\n- information about bodyContent provided without bodyType missing from error message")
+			}
+		}
+	})
+
+	t.Run("test invalid bodyType returns correct error", func(t *testing.T) {
+		bodyWithInvalidType, _ := config.NewBody("invalid value", "{\"key\": \"value\", \"key1\": \"value1\"}")
+		cfg := config.Config{
+			Request: config.Request{
+				Timeout: 5,
+				Body:    *bodyWithInvalidType,
+			},
+			RunnerOptions: config.RunnerOptions{
+				Requests:      5,
+				Concurrency:   5,
+				GlobalTimeout: 5,
+			},
+		}.WithURL("github-com/benchttp")
+		err := cfg.Validate()
+		if err == nil {
+			t.Errorf("invalid bodyType not considered as such")
+		} else {
+			if !errorContains(err, "bodyType: invalid value") {
+				t.Errorf("\n- information about invalid bodyType missing from error message")
+			}
+		}
+	})
+
+	t.Run("test invalid bodyContent returns correct error", func(t *testing.T) {
+		_, err := config.NewBody("application/json", "{\"invalid json\"}")
+		if err == nil {
+			t.Errorf("invalid bodyContent not considered as such")
+		} else if err != nil {
+			if !errorContains(err, "bodyContent is not valid json data") {
+				t.Errorf("\n- information about invalid bodyContent missing from error message")
+			}
+		}
+	})
+
+	// Body is validated before Config.Validate() is used so we do not check it here and provide a valid empty value
 	t.Run("test invalid configuration returns ErrInvalid error with correct messages", func(t *testing.T) {
 		cfg := config.Config{
 			Request: config.Request{
 				Timeout: -5,
+				Body:    *emptyBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      -5,
