@@ -111,7 +111,7 @@ func (p yamlParser) prettyErrorMessage(raw string) string {
 		// raw output examples:
 		// 	line 9: cannot unmarshal !!seq into int // unknown input value
 		// 	line 10: cannot unmarshal !!str `hello` into int // known input value
-		`^line (\d+): cannot unmarshal !!\w+(?: ` + "`" + `(\S+)` + "`" + `)? into (\w+)$`,
+		`^line (\d+): cannot unmarshal !!\w+(?: ` + "`" + `(\S+)` + "`" + `)? into (\S+)$`,
 	)
 	if matches := fieldBadValueRgx.FindStringSubmatch(raw); len(matches) >= 3 {
 		line, value, exptype := matches[1], matches[2], matches[3]

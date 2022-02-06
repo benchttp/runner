@@ -9,14 +9,14 @@ import (
 )
 
 func TestYAMLParser(t *testing.T) {
-	t.Run("return pretty errors for invalid config file", func(t *testing.T) {
+	t.Run("return expected errors", func(t *testing.T) {
 		testcases := []struct {
 			label  string
 			in     []byte
 			expErr error
 		}{
 			{
-				label: "field does not exist",
+				label: "unknown field",
 				in:    []byte("notafield: 123\n"),
 				expErr: &yaml.TypeError{
 					Errors: []string{
@@ -83,6 +83,62 @@ func TestYAMLParser(t *testing.T) {
 
 				if !reflect.DeepEqual(yamlErr, tc.expErr) {
 					t.Errorf("unexpected error messages:\nexp %v\ngot %v", tc.expErr, yamlErr)
+				}
+			})
+		}
+	})
+}
+
+func TestJSONParser(t *testing.T) {
+	t.Run("return expected errors", func(t *testing.T) {
+		testcases := []struct {
+			label string
+			in    []byte
+			exp   string
+		}{
+			{
+				label: "syntax error",
+				in:    []byte("{\n  \"runnerOptions\": {},\n}\n"),
+				exp:   "syntax error near 26: invalid character '}' looking for beginning of object key string",
+			},
+			{
+				label: "unknown field",
+				in:    []byte("{\n  \"notafield\": 123\n}\n"),
+				exp:   `invalid field ("notafield"): does not exist`,
+			},
+			{
+				label: "wrong type",
+				in:    []byte("{\n  \"runnerOptions\": {\n    \"requests\": [123]\n  }\n}\n"),
+				exp:   "wrong type for field runnerOptions.requests: want int, got array",
+			},
+			{
+				label: "valid config",
+				in:    []byte("{\n  \"runnerOptions\": {\n    \"requests\": 123\n  }\n}\n"),
+				exp:   "",
+			},
+		}
+
+		for _, tc := range testcases {
+			t.Run(tc.label, func(t *testing.T) {
+				var (
+					parser jsonParser
+					rawcfg unmarshaledConfig
+				)
+
+				gotErr := parser.parse(tc.in, &rawcfg)
+
+				if tc.exp == "" {
+					if gotErr != nil {
+						t.Fatalf("unexpected error: %v", gotErr)
+					}
+					return
+				}
+
+				if gotErr.Error() != tc.exp {
+					t.Errorf(
+						"unexpected error messages:\nexp %s\ngot %v",
+						tc.exp, gotErr,
+					)
 				}
 			})
 		}
