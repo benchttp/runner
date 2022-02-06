@@ -184,11 +184,12 @@ func (cfg Config) Validate() error { //nolint:gocognit
 		if reflect.ValueOf(cfg.Request.Body.Type).IsZero() {
 			inputErrors = append(inputErrors, fmt.Errorf("-bodyType: you must provide a value if you have added a bodyContent"))
 		}
-		if !contains(contentTypeValidValues, cfg.Request.Body.Type) {
-			inputErrors = append(inputErrors, fmt.Errorf("-bodyType: invalid value, we got %s", cfg.Request.Body.Type))
-		}
 		if reflect.ValueOf(cfg.Request.Body.Content).IsZero() {
 			inputErrors = append(inputErrors, fmt.Errorf("-bodyContent: you must provide a value if you have added a bodyType"))
+		} else {
+			if !contains(contentTypeValidValues, cfg.Request.Body.Type) {
+				inputErrors = append(inputErrors, fmt.Errorf("-bodyType: invalid value\n	valid value(s): %s \n	got %s", contentTypeValidValues, cfg.Request.Body.Type))
+			}
 		}
 	}
 
