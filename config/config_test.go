@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
@@ -69,7 +70,7 @@ func TestOverride(t *testing.T) {
 		baseCfg := config.Config{}
 		newCfg := config.New("http://a.b?p=2", 1, 2, 3, 4)
 
-		if gotCfg := baseCfg.Override(newCfg); gotCfg != baseCfg {
+		if gotCfg := baseCfg.Override(newCfg); !reflect.DeepEqual(gotCfg, baseCfg) {
 			t.Errorf("overrode unexpected fields:\nexp %#v\ngot %#v", baseCfg, gotCfg)
 		}
 	})
@@ -77,9 +78,11 @@ func TestOverride(t *testing.T) {
 	t.Run("override specified fields", func(t *testing.T) {
 		baseCfg := config.Config{}
 		newCfg := config.New("http://a.b?p=2", 1, 2, 3, 4)
+		newCfg.Request.Header = http.Header{"somekey": []string{"somevalue"}}
 		fields := []string{
 			config.FieldMethod,
 			config.FieldURL,
+			config.FieldHeader,
 			config.FieldTimeout,
 			config.FieldRequests,
 			config.FieldConcurrency,
