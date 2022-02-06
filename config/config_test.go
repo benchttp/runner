@@ -176,6 +176,7 @@ func TestOverride(t *testing.T) {
 		newCfg := config.Config{
 			Request: config.Request{
 				Timeout: 3 * time.Second,
+				Body:    *emptyBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,
@@ -194,6 +195,7 @@ func TestOverride(t *testing.T) {
 		newCfg := config.Config{
 			Request: config.Request{
 				Timeout: 3 * time.Second,
+				Body:    *emptyBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,
