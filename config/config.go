@@ -13,6 +13,7 @@ import (
 type Request struct {
 	Method  string
 	URL     *url.URL
+	Header  http.Header
 	Timeout time.Duration
 }
 
@@ -49,7 +50,12 @@ func (cfg Config) HTTPRequest() (*http.Request, error) {
 		return nil, errors.New("bad url")
 	}
 	// TODO: handle body
-	return http.NewRequest(cfg.Request.Method, rawURL, nil)
+	req, err := http.NewRequest(cfg.Request.Method, rawURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header = cfg.Request.Header
+	return req, nil
 }
 
 // Override returns a new Config based on cfg with overridden values from c.
@@ -62,6 +68,8 @@ func (cfg Config) Override(c Config, fields ...string) Config {
 			cfg.Request.Method = c.Request.Method
 		case FieldURL:
 			cfg.Request.URL = c.Request.URL
+		case FieldHeader:
+			cfg.Request.Header = c.Request.Header
 		case FieldTimeout:
 			cfg.Request.Timeout = c.Request.Timeout
 		case FieldRequests:
