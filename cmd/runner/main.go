@@ -37,37 +37,55 @@ var defaultConfigFiles = []string{
 }
 
 func parseArgs() {
+	// config file path
 	flag.StringVar(&configFile, "configFile", configfile.Find(defaultConfigFiles), "Config file path")
-	flag.StringVar(&uri, "url", "", "Target URL to request")
-	flag.Var(headerValue{header: &header}, "header", "HTTP request header")
-	flag.IntVar(&concurrency, "concurrency", 0, "Number of connections to run concurrently")
-	flag.IntVar(&requests, "requests", 0, "Number of requests to run, use duration as exit condition if omitted")
-	flag.DurationVar(&timeout, "timeout", 0, "Timeout for each HTTP request")
+
+	// request url
+	flag.StringVar(&uri, config.FieldURL, "", "Target URL to request")
+	// request header
+	flag.Var(headerValue{header: &header}, config.FieldHeader, "HTTP request header")
+	// request timeout
+	flag.DurationVar(&timeout, config.FieldTimeout, 0, "Timeout for each HTTP request")
+	// concurrency
+	flag.IntVar(&concurrency, config.FieldConcurrency, 0, "Number of connections to run concurrently")
+	// requests number
+	flag.IntVar(&requests, config.FieldRequests, 0, "Number of requests to run, use duration as exit condition if omitted")
+	// non-conurrent requests interval
 	flag.DurationVar(&interval, "interval", 0, "Minimum duration between two non concurrent requests")
-	flag.DurationVar(&globalTimeout, "globalTimeout", 0, "Duration of test")
+	// global timeout
+	flag.DurationVar(&globalTimeout, config.FieldGlobalTimeout, 0, "Max duration of test")
+
 	flag.Parse()
 }
 
 func main() {
-	parseArgs()
-
-	cfg, err := parseConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := requester.New(cfg).RunAndSendReport(reportURL); err != nil {
+	if err := run(); err != nil {
 		log.Fatal(err)
 	}
 }
 
+func run() error {
+	parseArgs()
+
+	cfg, err := parseConfig()
+	if err != nil {
+		return err
+	}
+
+	if err := requester.New(cfg).RunAndSendReport(reportURL); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // parseConfig returns a config.Config initialized with config file
 // options if found, overridden with CLI options.
-func parseConfig() (config.Config, error) {
+func parseConfig() (cfg config.Config, err error) {
 	fileCfg, err := configfile.Parse(configFile)
 	if err != nil && !errors.Is(err, configfile.ErrFileNotFound) {
 		// config file is not mandatory, other errors are critical
-		log.Fatal(err)
+		return
 	}
 
 	cliCfg := config.Config{
@@ -99,16 +117,19 @@ func configFlags() []string {
 	return fields
 }
 
+// headerValue implements flag.Value
 type headerValue struct {
 	header *http.Header
 }
 
+// String returns a string representation of the referenced header.
 func (v headerValue) String() string {
 	return fmt.Sprint(v.header)
 }
 
+// Set reads input string in format "key:value" and appends value
+// to the key's values of the referenced header.
 func (v headerValue) Set(in string) error {
-	fmt.Println("hello ", in)
 	keyval := strings.Split(in, ":")
 	if len(keyval) != 2 {
 		return errors.New(`expect format key:value`)
