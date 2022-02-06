@@ -24,11 +24,16 @@ func NewBody(bodyType, bodyContent string) (*Body, error) {
 	body.Type = bodyType
 
 	bodyContentMap := make(map[string]interface{})
-	err := json.Unmarshal([]byte(bodyContent), &bodyContentMap)
-	if err != nil {
-		return nil, errors.New("bodyContent is not valid json data")
-	}
 
+	if reflect.DeepEqual("", bodyContent) {
+		body.Content = bodyContentMap
+		return &body, nil
+	} else {
+		err := json.Unmarshal([]byte(bodyContent), &bodyContentMap)
+		if err != nil {
+			return nil, errors.New("bodyContent is not valid json data")
+		}
+	}
 	body.Content = bodyContentMap
 
 	return &body, nil
@@ -181,14 +186,18 @@ func (cfg Config) Validate() error { //nolint:gocognit
 	}
 
 	if !reflect.ValueOf(cfg.Request.Body).IsZero() {
+		if len(cfg.Request.Body.Content) == 0 {
+			inputErrors = append(inputErrors, fmt.Errorf("-bodyContent: you must provide a value if you have added a bodyType"))
+		}
 		if reflect.ValueOf(cfg.Request.Body.Type).IsZero() {
 			inputErrors = append(inputErrors, fmt.Errorf("-bodyType: you must provide a value if you have added a bodyContent"))
-		}
-		if reflect.ValueOf(cfg.Request.Body.Content).IsZero() {
-			inputErrors = append(inputErrors, fmt.Errorf("-bodyContent: you must provide a value if you have added a bodyType"))
 		} else {
 			if !contains(contentTypeValidValues, cfg.Request.Body.Type) {
-				inputErrors = append(inputErrors, fmt.Errorf("-bodyType: invalid value\n	valid value(s): %s \n	got %s", contentTypeValidValues, cfg.Request.Body.Type))
+				if cfg.Request.Body.Type == "" {
+					inputErrors = append(inputErrors, fmt.Errorf("-bodyType: invalid value\n	valid value(s): %s \n	got: nothing", contentTypeValidValues))
+				} else {
+					inputErrors = append(inputErrors, fmt.Errorf("-bodyType: invalid value\n	valid value(s): %s \n	got: %s", contentTypeValidValues, cfg.Request.Body.Type))
+				}
 			}
 		}
 	}
