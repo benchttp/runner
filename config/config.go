@@ -124,8 +124,9 @@ func New(uri string, requests, concurrency int, requestTimeout, globalTimeout ti
 func (cfg Config) Validate() error { //nolint:gocognit
 	inputErrors := []error{}
 
-	_, err := url.ParseRequestURI(cfg.Request.URL.String())
-	if err != nil {
+	if cfg.Request.URL == nil {
+		inputErrors = append(inputErrors, errors.New("-url: missing url"))
+	} else if _, err := url.ParseRequestURI(cfg.Request.URL.String()); err != nil {
 		inputErrors = append(inputErrors, fmt.Errorf("-url: %s is not a valid url", cfg.Request.URL.String()))
 	}
 
