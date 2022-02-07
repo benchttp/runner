@@ -78,11 +78,9 @@ func TestOverride(t *testing.T) {
 	t.Run("override specified fields", func(t *testing.T) {
 		baseCfg := config.Config{}
 		newCfg := config.New("http://a.b?p=2", 1, 2, 3, 4)
-		newCfg.Request.Header = http.Header{"somekey": []string{"somevalue"}}
 		fields := []string{
 			config.FieldMethod,
 			config.FieldURL,
-			config.FieldHeader,
 			config.FieldTimeout,
 			config.FieldRequests,
 			config.FieldConcurrency,
@@ -92,6 +90,75 @@ func TestOverride(t *testing.T) {
 		if gotCfg := baseCfg.Override(newCfg, fields...); !reflect.DeepEqual(gotCfg, newCfg) {
 			t.Errorf("did not override expected fields:\nexp %v\ngot %v", baseCfg, gotCfg)
 			t.Log(fields)
+		}
+	})
+
+	t.Run("override header selectively", func(t *testing.T) {
+		testcases := []struct {
+			label     string
+			oldHeader http.Header
+			newHeader http.Header
+			expHeader http.Header
+		}{
+			{
+				label:     "erase overridden keys",
+				oldHeader: http.Header{"key": []string{"oldval"}},
+				newHeader: http.Header{"key": []string{"newval"}},
+				expHeader: http.Header{"key": []string{"newval"}},
+			},
+			{
+				label:     "do not erase not overridden keys",
+				oldHeader: http.Header{"key": []string{"oldval"}},
+				newHeader: http.Header{},
+				expHeader: http.Header{"key": []string{"oldval"}},
+			},
+			{
+				label:     "add new keys",
+				oldHeader: http.Header{"key0": []string{"oldval"}},
+				newHeader: http.Header{"key1": []string{"newval"}},
+				expHeader: http.Header{
+					"key0": []string{"oldval"},
+					"key1": []string{"newval"},
+				},
+			},
+			{
+				label: "erase only overridden keys",
+				oldHeader: http.Header{
+					"key0": []string{"oldval0", "oldval1"},
+					"key1": []string{"oldval0", "oldval1"},
+				},
+				newHeader: http.Header{
+					"key1": []string{"newval0", "newval1"},
+					"key2": []string{"newval0", "newval1"},
+				},
+				expHeader: http.Header{
+					"key0": []string{"oldval0", "oldval1"},
+					"key1": []string{"newval0", "newval1"},
+					"key2": []string{"newval0", "newval1"},
+				},
+			},
+		}
+
+		for _, tc := range testcases {
+			t.Run(tc.label, func(t *testing.T) {
+				oldCfg := config.Config{
+					Request: config.Request{
+						Header: tc.oldHeader,
+					},
+				}
+
+				newCfg := config.Config{
+					Request: config.Request{
+						Header: tc.newHeader,
+					},
+				}
+
+				gotCfg := oldCfg.Override(newCfg, config.FieldHeader)
+
+				if gotHeader := gotCfg.Request.Header; !reflect.DeepEqual(gotHeader, tc.expHeader) {
+					t.Errorf("\nexp %v\ngot %v", tc.expHeader, gotHeader)
+				}
+			})
 		}
 	})
 }
