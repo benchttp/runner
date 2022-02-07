@@ -39,7 +39,7 @@ func parseArgs() {
 	flag.DurationVar(&timeout, "timeout", 0, "Timeout for each HTTP request")
 	flag.IntVar(&requests, "requests", 0, "Number of requests to run, use duration as exit condition if omitted")
 	flag.IntVar(&concurrency, "concurrency", 0, "Number of connections to run concurrently")
-	flag.DurationVar(&interval, "interval", 0, "Minimum duration between two groups of requests")
+	flag.DurationVar(&interval, "interval", 0, "Minimum duration between two non concurrent requests")
 	flag.DurationVar(&globalTimeout, "globalTimeout", 0, "Duration of test")
 	flag.Parse()
 }
