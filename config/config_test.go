@@ -49,10 +49,8 @@ func TestValidate(t *testing.T) {
 		err := cfg.Validate()
 		if err == nil {
 			t.Errorf("bodyType provided without bodyContent considered valid")
-		} else {
-			if !errorContains(err, "-bodyContent: you must provide a value if you have added a bodyType") {
-				t.Errorf("\n- information about bodyType provided without bodyContent missing from error message")
-			}
+		} else if !errorContains(err, "-bodyContent: you must provide a value if you have added a bodyType") {
+			t.Errorf("\n- information about bodyType provided without bodyContent missing from error message")
 		}
 	})
 
@@ -72,10 +70,8 @@ func TestValidate(t *testing.T) {
 		err := cfg.Validate()
 		if err == nil {
 			t.Errorf("bodyContent provided without bodyType considered valid")
-		} else {
-			if !errorContains(err, "-bodyType: you must provide a value if you have added a bodyContent") {
-				t.Errorf("\n- information about bodyContent provided without bodyType missing from error message")
-			}
+		} else if !errorContains(err, "-bodyType: you must provide a value if you have added a bodyContent") {
+			t.Errorf("\n- information about bodyContent provided without bodyType missing from error message")
 		}
 	})
 
@@ -95,10 +91,8 @@ func TestValidate(t *testing.T) {
 		err := cfg.Validate()
 		if err == nil {
 			t.Errorf("invalid bodyType not considered as such")
-		} else {
-			if !errorContains(err, "bodyType: invalid value") {
-				t.Errorf("\n- information about invalid bodyType missing from error message")
-			}
+		} else if !errorContains(err, "bodyType: invalid value") {
+			t.Errorf("\n- information about invalid bodyType missing from error message")
 		}
 	})
 
@@ -106,10 +100,8 @@ func TestValidate(t *testing.T) {
 		_, err := config.NewBody("application/json", "{\"invalid json\"}")
 		if err == nil {
 			t.Errorf("invalid bodyContent not considered as such")
-		} else if err != nil {
-			if !errorContains(err, "bodyContent is not valid json data") {
-				t.Errorf("\n- information about invalid bodyContent missing from error message")
-			}
+		} else if !errorContains(err, "bodyContent is not valid json data") {
+			t.Errorf("\n- information about invalid bodyContent missing from error message")
 		}
 	})
 

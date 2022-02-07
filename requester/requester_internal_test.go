@@ -19,11 +19,6 @@ const (
 
 var errTest = errors.New("test-generated error")
 
-var (
-	emptyBody, _ = config.NewBody("", "")
-	validBody, _ = config.NewBody("application/json", "{\"key\": \"value\", \"key1\": \"value1\"}")
-)
-
 func TestRun(t *testing.T) {
 	testcases := []struct {
 		label string
