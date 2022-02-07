@@ -17,7 +17,10 @@ const (
 	goodURL = "http://a.b"
 )
 
-var errTest = errors.New("test-generated error")
+var (
+	errTest      = errors.New("test-generated error")
+	validBody, _ = config.NewBody("application/json", "{\"key\": \"value\", \"key1\": \"value1\"}")
+)
 
 func TestRun(t *testing.T) {
 	testcases := []struct {
@@ -30,6 +33,7 @@ func TestRun(t *testing.T) {
 			req: New(config.Config{
 				Request: config.Request{
 					Timeout: 0,
+					Body:    *validBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      -1,
@@ -44,6 +48,7 @@ func TestRun(t *testing.T) {
 			req: New(config.Config{
 				Request: config.Request{
 					Timeout: 0,
+					Body:    *validBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      -1,
@@ -58,6 +63,7 @@ func TestRun(t *testing.T) {
 			req: withNoopTransport(New(config.Config{
 				Request: config.Request{
 					Timeout: time.Second,
+					Body:    *validBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      1,
@@ -87,6 +93,7 @@ func TestRun(t *testing.T) {
 		r := withErrTransport(New(config.Config{
 			Request: config.Request{
 				Timeout: time.Second,
+				Body:    *validBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,
@@ -119,6 +126,7 @@ func TestRun(t *testing.T) {
 		r := withNoopTransport(New(config.Config{
 			Request: config.Request{
 				Timeout: time.Second,
+				Body:    *validBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,
