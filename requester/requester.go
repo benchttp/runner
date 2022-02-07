@@ -71,7 +71,7 @@ func (r *Requester) Run() (Report, error) {
 		numWorker   = r.config.RunnerOptions.Concurrency
 		maxIter     = r.config.RunnerOptions.Requests
 		timeout     = r.config.RunnerOptions.GlobalTimeout
-		interval    = time.Second
+		interval    = r.config.RunnerOptions.Interval
 		ctx, cancel = context.WithTimeout(context.Background(), timeout)
 	)
 
