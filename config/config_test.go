@@ -137,6 +137,24 @@ func TestOverride(t *testing.T) {
 					"key2": []string{"newval0", "newval1"},
 				},
 			},
+			{
+				label:     "nil new header does nothing",
+				oldHeader: http.Header{"key": []string{"val"}},
+				newHeader: nil,
+				expHeader: http.Header{"key": []string{"val"}},
+			},
+			{
+				label:     "replace nil old header",
+				oldHeader: nil,
+				newHeader: http.Header{"key": []string{"val"}},
+				expHeader: http.Header{"key": []string{"val"}},
+			},
+			{
+				label:     "nil over nil is nil",
+				oldHeader: nil,
+				newHeader: nil,
+				expHeader: nil,
+			},
 		}
 
 		for _, tc := range testcases {
@@ -156,7 +174,7 @@ func TestOverride(t *testing.T) {
 				gotCfg := oldCfg.Override(newCfg, config.FieldHeader)
 
 				if gotHeader := gotCfg.Request.Header; !reflect.DeepEqual(gotHeader, tc.expHeader) {
-					t.Errorf("\nexp %v\ngot %v", tc.expHeader, gotHeader)
+					t.Errorf("\nexp %#v\ngot %#v", tc.expHeader, gotHeader)
 				}
 			})
 		}
