@@ -69,7 +69,7 @@ func (cfg Config) Override(c Config, fields ...string) Config {
 		case FieldURL:
 			cfg.Request.URL = c.Request.URL
 		case FieldHeader:
-			cfg.Request.Header = c.Request.Header
+			cfg.overrideHeader(c.Request.Header)
 		case FieldTimeout:
 			cfg.Request.Timeout = c.Request.Timeout
 		case FieldRequests:
@@ -83,6 +83,18 @@ func (cfg Config) Override(c Config, fields ...string) Config {
 		}
 	}
 	return cfg
+}
+
+func (cfg *Config) overrideHeader(newHeader http.Header) {
+	if newHeader == nil {
+		return
+	}
+	if cfg.Request.Header == nil {
+		cfg.Request.Header = http.Header{}
+	}
+	for k, v := range newHeader {
+		cfg.Request.Header[k] = v
+	}
 }
 
 // WithURL sets the current Config to the parsed *url.URL from rawURL
