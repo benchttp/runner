@@ -17,18 +17,15 @@ type Body struct {
 }
 
 func NewBody(bodyType, bodyContent string) (*Body, error) {
-	if reflect.DeepEqual("", bodyType) && reflect.DeepEqual("", bodyContent) {
-		return &Body{"", nil}, nil
-	}
 	var body Body
 	body.Type = bodyType
-
 	bodyContentMap := make(map[string]interface{})
-
 	if reflect.DeepEqual("", bodyContent) {
+		json.Unmarshal([]byte(bodyContent), &bodyContentMap)
 		body.Content = bodyContentMap
 		return &body, nil
 	}
+
 	err := json.Unmarshal([]byte(bodyContent), &bodyContentMap)
 	if err != nil {
 		return nil, errors.New("bodyContent is not valid json data")

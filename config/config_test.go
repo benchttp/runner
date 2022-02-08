@@ -11,11 +11,13 @@ import (
 	"github.com/benchttp/runner/config"
 )
 
-var emptyBody, _ = config.NewBody("", "")
+var (
+	emptyBody, _ = config.NewBody("", "")
+	validBody, _ = config.NewBody("application/json", "{\"key\": \"value\", \"key1\": \"value1\"}")
+)
 
 func TestValidate(t *testing.T) {
 	t.Run("test valid configuration", func(t *testing.T) {
-		validBody, _ := config.NewBody("application/json", "{\"key\": \"value\", \"key1\": \"value1\"}")
 		cfg := config.Config{
 			Request: config.Request{
 				Timeout: 5,
@@ -105,7 +107,7 @@ func TestValidate(t *testing.T) {
 		}
 	})
 
-	// Body is validated before Config.Validate() is used so we do not check it here and provide a valid empty value
+	// Body is validated before Config.Validate() is used so we do not check it here and provide a valid empty body
 	t.Run("test invalid configuration returns ErrInvalid error with correct messages", func(t *testing.T) {
 		cfg := config.Config{
 			Request: config.Request{
@@ -168,7 +170,7 @@ func TestOverride(t *testing.T) {
 		newCfg := config.Config{
 			Request: config.Request{
 				Timeout: 3 * time.Second,
-				Body:    *emptyBody,
+				Body:    *validBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,
@@ -187,7 +189,7 @@ func TestOverride(t *testing.T) {
 		newCfg := config.Config{
 			Request: config.Request{
 				Timeout: 3 * time.Second,
-				Body:    *emptyBody,
+				Body:    *validBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,
@@ -202,6 +204,8 @@ func TestOverride(t *testing.T) {
 			config.FieldRequests,
 			config.FieldConcurrency,
 			config.FieldGlobalTimeout,
+			config.FieldBodyType,
+			config.FieldBodyContent,
 		}
 
 		if gotCfg := baseCfg.Override(newCfg, fields...); !reflect.DeepEqual(gotCfg, newCfg) {
