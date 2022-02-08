@@ -19,7 +19,7 @@ const (
 
 var (
 	errTest      = errors.New("test-generated error")
-	validBody, _ = config.NewBody("application/json", "{\"key\": \"value\", \"key1\": \"value1\"}")
+	emptyBody, _ = config.NewBody("", "")
 )
 
 func TestRun(t *testing.T) {
@@ -33,7 +33,7 @@ func TestRun(t *testing.T) {
 			req: New(config.Config{
 				Request: config.Request{
 					Timeout: 0,
-					Body:    *validBody,
+					Body:    *emptyBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      -1,
@@ -48,7 +48,7 @@ func TestRun(t *testing.T) {
 			req: New(config.Config{
 				Request: config.Request{
 					Timeout: 0,
-					Body:    *validBody,
+					Body:    *emptyBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      -1,
@@ -63,7 +63,7 @@ func TestRun(t *testing.T) {
 			req: withNoopTransport(New(config.Config{
 				Request: config.Request{
 					Timeout: time.Second,
-					Body:    *validBody,
+					Body:    *emptyBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      1,
@@ -93,7 +93,7 @@ func TestRun(t *testing.T) {
 		r := withErrTransport(New(config.Config{
 			Request: config.Request{
 				Timeout: time.Second,
-				Body:    *validBody,
+				Body:    *emptyBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,
@@ -126,7 +126,7 @@ func TestRun(t *testing.T) {
 		r := withNoopTransport(New(config.Config{
 			Request: config.Request{
 				Timeout: time.Second,
-				Body:    *validBody,
+				Body:    *emptyBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,
