@@ -111,12 +111,14 @@ func (r *Requester) record(req *http.Request, interval time.Duration) func() {
 		// It is necessary to clone the request because one request with a non-nil body cannot be used in concurrent threads
 		// .Clone() does not clone the body, so it is added after with .GetBody()
 		reqClone := req.Clone(req.Context())
-		bodyClone, err := req.GetBody()
-		if err != nil {
-			r.appendRecord(Record{Error: err})
-			return
+		if req.Body != nil {
+			bodyClone, err := req.GetBody()
+			if err != nil {
+				r.appendRecord(Record{Error: err})
+				return
+			}
+			reqClone.Body = bodyClone
 		}
-		reqClone.Body = bodyClone
 
 		resp, err := r.client.Do(reqClone)
 		if err != nil {
