@@ -20,18 +20,13 @@ func NewBody(bodyType, bodyContent string) (*Body, error) {
 	var body Body
 	body.Type = bodyType
 	bodyContentMap := make(map[string]interface{})
-	if reflect.DeepEqual("", bodyContent) {
-		json.Unmarshal([]byte(bodyContent), &bodyContentMap)
-		body.Content = bodyContentMap
-		return &body, nil
-	}
-
-	err := json.Unmarshal([]byte(bodyContent), &bodyContentMap)
-	if err != nil {
-		return nil, errors.New("bodyContent is not valid json data")
+	if !reflect.DeepEqual("", bodyContent) {
+		err := json.Unmarshal([]byte(bodyContent), &bodyContentMap)
+		if err != nil {
+			return nil, errors.New("bodyContent is not valid json data")
+		}
 	}
 	body.Content = bodyContentMap
-
 	return &body, nil
 }
 
