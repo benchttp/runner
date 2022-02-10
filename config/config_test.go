@@ -6,13 +6,23 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/benchttp/runner/config"
 )
 
 func TestValidate(t *testing.T) {
 	t.Run("test valid configuration", func(t *testing.T) {
-		cfg := config.New("https://github.com/benchttp/", 5, 5, 5, 5)
+		cfg := config.Config{
+			Request: config.Request{
+				Timeout: 5,
+			},
+			RunnerOptions: config.RunnerOptions{
+				Requests:      5,
+				Concurrency:   5,
+				GlobalTimeout: 5,
+			},
+		}.WithURL("https://github.com/benchttp/")
 		err := cfg.Validate()
 		if err != nil {
 			t.Errorf("valid configuration not considered as such")
@@ -20,7 +30,16 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("test invalid configuration returns ErrInvalid error with correct messages", func(t *testing.T) {
-		cfg := config.New("github-com/benchttp/", -5, -5, -5, -5)
+		cfg := config.Config{
+			Request: config.Request{
+				Timeout: -5,
+			},
+			RunnerOptions: config.RunnerOptions{
+				Requests:      -5,
+				Concurrency:   -5,
+				GlobalTimeout: -5,
+			},
+		}.WithURL("github-com/benchttp")
 		err := cfg.Validate()
 		if err == nil {
 			t.Errorf("invalid configuration considered valid")
@@ -68,7 +87,16 @@ func TestWithURL(t *testing.T) {
 func TestOverride(t *testing.T) {
 	t.Run("do not override unspecified fields", func(t *testing.T) {
 		baseCfg := config.Config{}
-		newCfg := config.New("http://a.b?p=2", 1, 2, 3, 4)
+		newCfg := config.Config{
+			Request: config.Request{
+				Timeout: 3 * time.Second,
+			},
+			RunnerOptions: config.RunnerOptions{
+				Requests:      1,
+				Concurrency:   2,
+				GlobalTimeout: 4 * time.Second,
+			},
+		}.WithURL("http://a.b?p=2")
 
 		if gotCfg := baseCfg.Override(newCfg); !reflect.DeepEqual(gotCfg, baseCfg) {
 			t.Errorf("overrode unexpected fields:\nexp %#v\ngot %#v", baseCfg, gotCfg)
@@ -77,7 +105,16 @@ func TestOverride(t *testing.T) {
 
 	t.Run("override specified fields", func(t *testing.T) {
 		baseCfg := config.Config{}
-		newCfg := config.New("http://a.b?p=2", 1, 2, 3, 4)
+		newCfg := config.Config{
+			Request: config.Request{
+				Timeout: 3 * time.Second,
+			},
+			RunnerOptions: config.RunnerOptions{
+				Requests:      1,
+				Concurrency:   2,
+				GlobalTimeout: 4 * time.Second,
+			},
+		}.WithURL("http://a.b?p=2")
 		fields := []string{
 			config.FieldMethod,
 			config.FieldURL,

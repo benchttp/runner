@@ -110,30 +110,6 @@ func (cfg Config) WithURL(rawURL string) Config {
 	return cfg
 }
 
-// New returns a Config initialized with given parameters. The returned Config
-// is not guaranteed to be safe: it must be validated using Config.Validate
-// before usage.
-//
-// TODO: remove this function: https://github.com/benchttp/runner/pull/40/
-func New(uri string, requests, concurrency int, requestTimeout, globalTimeout time.Duration) Config {
-	// ignore err: a Config can be invalid at this point
-	urlURL, _ := url.ParseRequestURI(uri)
-	if urlURL == nil {
-		urlURL = &url.URL{}
-	}
-	return Config{
-		Request: Request{
-			URL:     urlURL,
-			Timeout: requestTimeout,
-		},
-		RunnerOptions: RunnerOptions{
-			Requests:      requests,
-			Concurrency:   concurrency,
-			GlobalTimeout: globalTimeout,
-		},
-	}
-}
-
 // Validate returns the config and a not nil ErrInvalid if any of the fields provided by the user is not valid
 func (cfg Config) Validate() error { //nolint:gocognit
 	inputErrors := []error{}
