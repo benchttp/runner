@@ -20,6 +20,8 @@ const (
 type Requester struct {
 	records []Record
 	numErr  int
+	start   time.Time
+	done    bool
 
 	config config.Config
 	client http.Client
@@ -67,6 +69,8 @@ func (r *Requester) Run() (Report, error) {
 		return Report{}, fmt.Errorf("%w: %s", ErrConnection, err)
 	}
 
+	r.start = time.Now()
+
 	var (
 		numWorker   = r.config.RunnerOptions.Concurrency
 		maxIter     = r.config.RunnerOptions.Requests
@@ -77,9 +81,28 @@ func (r *Requester) Run() (Report, error) {
 
 	defer cancel()
 
+	// print state every second
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		tick := ticker.C
+		for {
+			if r.done {
+				ticker.Stop()
+				return
+			}
+			fmt.Print(r.state())
+			<-tick
+		}
+	}()
+
 	if err := dispatcher.New(numWorker).Do(ctx, maxIter, r.record(req, interval)); err != nil {
 		return Report{}, err
 	}
+
+	r.done = true
+
+	// print final state
+	fmt.Println(r.state())
 
 	return makeReport(r.config, r.records, r.numErr), nil
 }
@@ -137,6 +160,7 @@ func (r *Requester) record(req *http.Request, interval time.Duration) func() {
 			Events: r.tracer.events,
 		})
 
+		fmt.Print(r.state())
 		time.Sleep(interval)
 	}
 }
