@@ -11,6 +11,7 @@ import (
 
 	"github.com/benchttp/runner/config"
 	configfile "github.com/benchttp/runner/config/file"
+	"github.com/benchttp/runner/internal/adapter"
 	"github.com/benchttp/runner/requester"
 )
 
@@ -77,7 +78,7 @@ func run() error {
 		return err
 	}
 
-	rep, err := requester.New(cfg).Run(req)
+	rep, err := requester.New(adapter.RequesterConfig(cfg)).Run(req)
 	if err != nil {
 		return err
 	}
