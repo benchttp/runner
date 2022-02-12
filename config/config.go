@@ -11,18 +11,18 @@ import (
 
 // Request contains the confing options relative to a single request.
 type Request struct {
-	Method  string
-	URL     *url.URL
-	Header  http.Header
-	Timeout time.Duration
+	Method string
+	URL    *url.URL
+	Header http.Header
 }
 
 // RunnerOptions contains options relative to the runner.
 type RunnerOptions struct {
-	Requests      int
-	Concurrency   int
-	Interval      time.Duration
-	GlobalTimeout time.Duration
+	Requests       int
+	Concurrency    int
+	Interval       time.Duration
+	RequestTimeout time.Duration
+	GlobalTimeout  time.Duration
 }
 
 // Config represents the configuration of the runner.
@@ -70,14 +70,14 @@ func (cfg Config) Override(c Config, fields ...string) Config {
 			cfg.Request.URL = c.Request.URL
 		case FieldHeader:
 			cfg.overrideHeader(c.Request.Header)
-		case FieldTimeout:
-			cfg.Request.Timeout = c.Request.Timeout
 		case FieldRequests:
 			cfg.RunnerOptions.Requests = c.RunnerOptions.Requests
 		case FieldConcurrency:
 			cfg.RunnerOptions.Concurrency = c.RunnerOptions.Concurrency
 		case FieldInterval:
 			cfg.RunnerOptions.Interval = c.RunnerOptions.Interval
+		case FieldRequestTimeout:
+			cfg.RunnerOptions.RequestTimeout = c.RunnerOptions.RequestTimeout
 		case FieldGlobalTimeout:
 			cfg.RunnerOptions.GlobalTimeout = c.RunnerOptions.GlobalTimeout
 		}
@@ -128,12 +128,12 @@ func (cfg Config) Validate() error { //nolint:gocognit
 		inputErrors = append(inputErrors, fmt.Errorf("-concurrency: must be > 0, we got %d", cfg.RunnerOptions.Concurrency))
 	}
 
-	if cfg.Request.Timeout < 0 {
-		inputErrors = append(inputErrors, fmt.Errorf("-timeout: must be > 0, we got %d", cfg.Request.Timeout))
-	}
-
 	if cfg.RunnerOptions.Interval < 0 {
 		inputErrors = append(inputErrors, fmt.Errorf("-interval: must be > 0, we got %d", cfg.RunnerOptions.Interval))
+	}
+
+	if cfg.RunnerOptions.RequestTimeout < 0 {
+		inputErrors = append(inputErrors, fmt.Errorf("-timeout: must be > 0, we got %d", cfg.RunnerOptions.RequestTimeout))
 	}
 
 	if cfg.RunnerOptions.GlobalTimeout < 0 {

@@ -144,14 +144,14 @@ func newExpConfig() config.Config {
 				"key0": []string{"val0", "val1"},
 				"key1": []string{"val0"},
 			},
-			Timeout: 2 * time.Second,
 		},
 
 		RunnerOptions: config.RunnerOptions{
-			Requests:      100,
-			Concurrency:   1,
-			Interval:      50 * time.Millisecond,
-			GlobalTimeout: 60 * time.Second,
+			Requests:       100,
+			Concurrency:    1,
+			Interval:       50 * time.Millisecond,
+			RequestTimeout: 2 * time.Second,
+			GlobalTimeout:  60 * time.Second,
 		},
 	}
 }

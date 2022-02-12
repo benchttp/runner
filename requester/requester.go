@@ -47,7 +47,7 @@ func New(cfg config.Config) *Requester {
 			// Timeout includes connection time, any redirects, and reading
 			// the response body.
 			// We may want exclude reading the response body in our benchmark tool.
-			Timeout: cfg.Request.Timeout,
+			Timeout: cfg.RunnerOptions.RequestTimeout,
 
 			// tracer keeps track of all events of the current request.
 			Transport: tracer,

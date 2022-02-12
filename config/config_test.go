@@ -14,13 +14,11 @@ import (
 func TestValidate(t *testing.T) {
 	t.Run("test valid configuration", func(t *testing.T) {
 		cfg := config.Config{
-			Request: config.Request{
-				Timeout: 5,
-			},
 			RunnerOptions: config.RunnerOptions{
-				Requests:      5,
-				Concurrency:   5,
-				GlobalTimeout: 5,
+				Requests:       5,
+				Concurrency:    5,
+				RequestTimeout: 5,
+				GlobalTimeout:  5,
 			},
 		}.WithURL("https://github.com/benchttp/")
 		err := cfg.Validate()
@@ -31,13 +29,11 @@ func TestValidate(t *testing.T) {
 
 	t.Run("test invalid configuration returns ErrInvalid error with correct messages", func(t *testing.T) {
 		cfg := config.Config{
-			Request: config.Request{
-				Timeout: -5,
-			},
 			RunnerOptions: config.RunnerOptions{
-				Requests:      -5,
-				Concurrency:   -5,
-				GlobalTimeout: -5,
+				Requests:       -5,
+				Concurrency:    -5,
+				RequestTimeout: -5,
+				GlobalTimeout:  -5,
 			},
 		}.WithURL("github-com/benchttp")
 		err := cfg.Validate()
@@ -88,13 +84,11 @@ func TestOverride(t *testing.T) {
 	t.Run("do not override unspecified fields", func(t *testing.T) {
 		baseCfg := config.Config{}
 		newCfg := config.Config{
-			Request: config.Request{
-				Timeout: 3 * time.Second,
-			},
 			RunnerOptions: config.RunnerOptions{
-				Requests:      1,
-				Concurrency:   2,
-				GlobalTimeout: 4 * time.Second,
+				Requests:       1,
+				Concurrency:    2,
+				RequestTimeout: 3 * time.Second,
+				GlobalTimeout:  4 * time.Second,
 			},
 		}.WithURL("http://a.b?p=2")
 
@@ -106,21 +100,19 @@ func TestOverride(t *testing.T) {
 	t.Run("override specified fields", func(t *testing.T) {
 		baseCfg := config.Config{}
 		newCfg := config.Config{
-			Request: config.Request{
-				Timeout: 3 * time.Second,
-			},
 			RunnerOptions: config.RunnerOptions{
-				Requests:      1,
-				Concurrency:   2,
-				GlobalTimeout: 4 * time.Second,
+				Requests:       1,
+				Concurrency:    2,
+				RequestTimeout: 3 * time.Second,
+				GlobalTimeout:  4 * time.Second,
 			},
 		}.WithURL("http://a.b?p=2")
 		fields := []string{
 			config.FieldMethod,
 			config.FieldURL,
-			config.FieldTimeout,
 			config.FieldRequests,
 			config.FieldConcurrency,
+			config.FieldRequestTimeout,
 			config.FieldGlobalTimeout,
 		}
 

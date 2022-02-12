@@ -20,14 +20,14 @@ const (
 )
 
 var (
-	configFile    string
-	uri           string
-	header        = http.Header{}
-	concurrency   int           // Number of connections to run concurrently
-	requests      int           // Number of requests to run, use duration as exit condition if omitted.
-	timeout       time.Duration // Timeout for each HTTP request
-	interval      time.Duration // Minimum duration between two groups of requests
-	globalTimeout time.Duration // Duration of test
+	configFile     string
+	uri            string
+	header         = http.Header{}
+	concurrency    int           // Number of connections to run concurrently
+	requests       int           // Number of requests to run, use duration as exit condition if omitted.
+	interval       time.Duration // Minimum duration between two groups of requests
+	requestTimeout time.Duration // Timeout for each HTTP request
+	globalTimeout  time.Duration // Duration of test
 )
 
 var defaultConfigFiles = []string{
@@ -44,14 +44,14 @@ func parseArgs() {
 	flag.StringVar(&uri, config.FieldURL, "", "Target URL to request")
 	// request header
 	flag.Var(headerValue{header: &header}, config.FieldHeader, "HTTP request header")
-	// request timeout
-	flag.DurationVar(&timeout, config.FieldTimeout, 0, "Timeout for each HTTP request")
 	// concurrency
 	flag.IntVar(&concurrency, config.FieldConcurrency, 0, "Number of connections to run concurrently")
 	// requests number
 	flag.IntVar(&requests, config.FieldRequests, 0, "Number of requests to run, use duration as exit condition if omitted")
 	// non-conurrent requests interval
 	flag.DurationVar(&interval, "interval", 0, "Minimum duration between two non concurrent requests")
+	// request timeout
+	flag.DurationVar(&requestTimeout, config.FieldRequestTimeout, 0, "Timeout for each HTTP request")
 	// global timeout
 	flag.DurationVar(&globalTimeout, config.FieldGlobalTimeout, 0, "Max duration of test")
 
@@ -90,14 +90,14 @@ func parseConfig() (cfg config.Config, err error) {
 
 	cliCfg := config.Config{
 		Request: config.Request{
-			Header:  header,
-			Timeout: timeout,
+			Header: header,
 		},
 		RunnerOptions: config.RunnerOptions{
-			Requests:      requests,
-			Concurrency:   concurrency,
-			Interval:      interval,
-			GlobalTimeout: globalTimeout,
+			Requests:       requests,
+			Concurrency:    concurrency,
+			Interval:       interval,
+			RequestTimeout: requestTimeout,
+			GlobalTimeout:  globalTimeout,
 		},
 	}.WithURL(uri)
 

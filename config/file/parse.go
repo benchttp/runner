@@ -71,15 +71,6 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:goc
 		fields = append(fields, config.FieldHeader)
 	}
 
-	if timeout := raw.Request.Timeout; timeout != nil {
-		parsedTimeout, err := parseOptionalDuration(*timeout)
-		if err != nil {
-			return config.Config{}, err
-		}
-		cfg.Request.Timeout = parsedTimeout
-		fields = append(fields, config.FieldTimeout)
-	}
-
 	if requests := raw.RunnerOptions.Requests; requests != nil {
 		cfg.RunnerOptions.Requests = *requests
 		fields = append(fields, config.FieldRequests)
@@ -97,6 +88,15 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:goc
 		}
 		cfg.RunnerOptions.Interval = parsedInterval
 		fields = append(fields, config.FieldInterval)
+	}
+
+	if requestTimeout := raw.RunnerOptions.RequestTimeout; requestTimeout != nil {
+		parsedTimeout, err := parseOptionalDuration(*requestTimeout)
+		if err != nil {
+			return config.Config{}, err
+		}
+		cfg.RunnerOptions.RequestTimeout = parsedTimeout
+		fields = append(fields, config.FieldRequestTimeout)
 	}
 
 	if globalTimeout := raw.RunnerOptions.GlobalTimeout; globalTimeout != nil {
