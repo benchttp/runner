@@ -66,7 +66,7 @@ func TestParse(t *testing.T) {
 					t.Errorf("\nexp %v\ngot %v", tc.expErr, gotErr)
 				}
 
-				if !reflect.DeepEqual(gotCfg, config.Config{}) {
+				if !reflect.DeepEqual(gotCfg, config.Global{}) {
 					t.Errorf("\nexp config.Config{}\ngot %v", gotCfg)
 				}
 			})
@@ -134,9 +134,9 @@ func TestParse(t *testing.T) {
 
 // newExpConfig returns the expected config.Config result after parsing
 // one of the config files in testdataConfigPath.
-func newExpConfig() config.Config {
+func newExpConfig() config.Global {
 	u, _ := url.ParseRequestURI(testURL)
-	return config.Config{
+	return config.Global{
 		Request: config.Request{
 			Method: "GET",
 			URL:    u,

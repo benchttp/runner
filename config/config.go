@@ -25,23 +25,23 @@ type Runner struct {
 	GlobalTimeout  time.Duration
 }
 
-// Config represents the configuration of the runner.
-// It must be validated using Config.Validate before usage.
-type Config struct {
+// Global represents the global configuration of the runner.
+// It must be validated using Global.Validate before usage.
+type Global struct {
 	Request Request
 	Runner  Runner
 }
 
 // String returns an indented JSON representation of Config
 // for debugging purposes.
-func (cfg Config) String() string {
+func (cfg Global) String() string {
 	b, _ := json.MarshalIndent(cfg, "", "  ")
 	return string(b)
 }
 
 // HTTPRequest returns a *http.Request created from Target. Returns any non-nil
 // error that occurred.
-func (cfg Config) HTTPRequest() (*http.Request, error) {
+func (cfg Global) HTTPRequest() (*http.Request, error) {
 	if cfg.Request.URL == nil {
 		return nil, errors.New("empty url")
 	}
@@ -61,7 +61,7 @@ func (cfg Config) HTTPRequest() (*http.Request, error) {
 // Override returns a new Config based on cfg with overridden values from c.
 // Only fields specified in options are replaced. Accepted options are limited
 // to existing Fields, other values are silently ignored.
-func (cfg Config) Override(c Config, fields ...string) Config {
+func (cfg Global) Override(c Global, fields ...string) Global {
 	for _, field := range fields {
 		switch field {
 		case FieldMethod:
@@ -85,7 +85,7 @@ func (cfg Config) Override(c Config, fields ...string) Config {
 	return cfg
 }
 
-func (cfg *Config) overrideHeader(newHeader http.Header) {
+func (cfg *Global) overrideHeader(newHeader http.Header) {
 	if newHeader == nil {
 		return
 	}
@@ -100,7 +100,7 @@ func (cfg *Config) overrideHeader(newHeader http.Header) {
 // WithURL sets the current Config to the parsed *url.URL from rawURL
 // and returns it. Any errors is discarded as a Config can be invalid
 // until Config.Validate is called. The url is guaranteed not to be nil.
-func (cfg Config) WithURL(rawURL string) Config {
+func (cfg Global) WithURL(rawURL string) Global {
 	// ignore err: a Config can be invalid at this point
 	urlURL, _ := url.ParseRequestURI(rawURL)
 	if urlURL == nil {
@@ -111,7 +111,7 @@ func (cfg Config) WithURL(rawURL string) Config {
 }
 
 // Validate returns the config and a not nil ErrInvalid if any of the fields provided by the user is not valid
-func (cfg Config) Validate() error { //nolint:gocognit
+func (cfg Global) Validate() error { //nolint:gocognit
 	inputErrors := []error{}
 
 	if cfg.Request.URL == nil {
@@ -147,6 +147,6 @@ func (cfg Config) Validate() error { //nolint:gocognit
 }
 
 // Default returns a default config that is safe to use.
-func Default() Config {
+func Default() Global {
 	return defaultConfig
 }

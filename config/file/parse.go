@@ -13,7 +13,7 @@ import (
 
 // Parse parses a benchttp runner config file into a config.Config
 // and returns it or the first non-nil error occurring in the process.
-func Parse(cfgpath string) (cfg config.Config, err error) {
+func Parse(cfgpath string) (cfg config.Global, err error) {
 	b, err := os.ReadFile(cfgpath)
 	switch {
 	case err == nil:
@@ -44,8 +44,8 @@ func Parse(cfgpath string) (cfg config.Config, err error) {
 
 // parseRawConfig parses an input raw config as a config.Config and returns it
 // or the first non-nil error occurring in the process.
-func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:gocognit // acceptable complexity for a parsing func
-	cfg := config.Config{}
+func parseRawConfig(raw unmarshaledConfig) (config.Global, error) { //nolint:gocognit // acceptable complexity for a parsing func
+	cfg := config.Global{}
 	fields := make([]string, 0, 6)
 
 	if method := raw.Request.Method; method != nil {
@@ -56,7 +56,7 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:goc
 	if rawURL := raw.Request.URL; rawURL != nil {
 		parsedURL, err := parseAndBuildURL(*raw.Request.URL, raw.Request.QueryParams)
 		if err != nil {
-			return config.Config{}, err
+			return config.Global{}, err
 		}
 		cfg.Request.URL = parsedURL
 		fields = append(fields, config.FieldURL)
@@ -84,7 +84,7 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:goc
 	if interval := raw.Runner.Interval; interval != nil {
 		parsedInterval, err := parseOptionalDuration(*interval)
 		if err != nil {
-			return config.Config{}, err
+			return config.Global{}, err
 		}
 		cfg.Runner.Interval = parsedInterval
 		fields = append(fields, config.FieldInterval)
@@ -93,7 +93,7 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:goc
 	if requestTimeout := raw.Runner.RequestTimeout; requestTimeout != nil {
 		parsedTimeout, err := parseOptionalDuration(*requestTimeout)
 		if err != nil {
-			return config.Config{}, err
+			return config.Global{}, err
 		}
 		cfg.Runner.RequestTimeout = parsedTimeout
 		fields = append(fields, config.FieldRequestTimeout)
@@ -102,7 +102,7 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:goc
 	if globalTimeout := raw.Runner.GlobalTimeout; globalTimeout != nil {
 		parsedGlobalTimeout, err := parseOptionalDuration(*globalTimeout)
 		if err != nil {
-			return config.Config{}, err
+			return config.Global{}, err
 		}
 		cfg.Runner.GlobalTimeout = parsedGlobalTimeout
 		fields = append(fields, config.FieldGlobalTimeout)

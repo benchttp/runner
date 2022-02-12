@@ -13,7 +13,7 @@ import (
 
 func TestValidate(t *testing.T) {
 	t.Run("test valid configuration", func(t *testing.T) {
-		cfg := config.Config{
+		cfg := config.Global{
 			Runner: config.Runner{
 				Requests:       5,
 				Concurrency:    5,
@@ -28,7 +28,7 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("test invalid configuration returns ErrInvalid error with correct messages", func(t *testing.T) {
-		cfg := config.Config{
+		cfg := config.Global{
 			Runner: config.Runner{
 				Requests:       -5,
 				Concurrency:    -5,
@@ -61,7 +61,7 @@ func TestValidate(t *testing.T) {
 
 func TestWithURL(t *testing.T) {
 	t.Run("set empty url if invalid", func(t *testing.T) {
-		cfg := config.Config{}.WithURL("abc")
+		cfg := config.Global{}.WithURL("abc")
 		if got := cfg.Request.URL; !reflect.DeepEqual(got, &url.URL{}) {
 			t.Errorf("exp empty *url.URL, got %v", got)
 		}
@@ -71,7 +71,7 @@ func TestWithURL(t *testing.T) {
 		var (
 			rawURL    = "http://benchttp.app?cool=true"
 			expURL, _ = url.ParseRequestURI(rawURL)
-			gotURL    = config.Config{}.WithURL(rawURL).Request.URL
+			gotURL    = config.Global{}.WithURL(rawURL).Request.URL
 		)
 
 		if !reflect.DeepEqual(gotURL, expURL) {
@@ -82,8 +82,8 @@ func TestWithURL(t *testing.T) {
 
 func TestOverride(t *testing.T) {
 	t.Run("do not override unspecified fields", func(t *testing.T) {
-		baseCfg := config.Config{}
-		newCfg := config.Config{
+		baseCfg := config.Global{}
+		newCfg := config.Global{
 			Runner: config.Runner{
 				Requests:       1,
 				Concurrency:    2,
@@ -98,8 +98,8 @@ func TestOverride(t *testing.T) {
 	})
 
 	t.Run("override specified fields", func(t *testing.T) {
-		baseCfg := config.Config{}
-		newCfg := config.Config{
+		baseCfg := config.Global{}
+		newCfg := config.Global{
 			Runner: config.Runner{
 				Requests:       1,
 				Concurrency:    2,
@@ -188,13 +188,13 @@ func TestOverride(t *testing.T) {
 
 		for _, tc := range testcases {
 			t.Run(tc.label, func(t *testing.T) {
-				oldCfg := config.Config{
+				oldCfg := config.Global{
 					Request: config.Request{
 						Header: tc.oldHeader,
 					},
 				}
 
-				newCfg := config.Config{
+				newCfg := config.Global{
 					Request: config.Request{
 						Header: tc.newHeader,
 					},

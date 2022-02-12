@@ -92,14 +92,14 @@ func run() error {
 
 // parseConfig returns a config.Config initialized with config file
 // options if found, overridden with CLI options.
-func parseConfig() (cfg config.Config, err error) {
+func parseConfig() (cfg config.Global, err error) {
 	fileCfg, err := configfile.Parse(configFile)
 	if err != nil && !errors.Is(err, configfile.ErrFileNotFound) {
 		// config file is not mandatory, other errors are critical
 		return
 	}
 
-	cliCfg := config.Config{
+	cliCfg := config.Global{
 		Request: config.Request{
 			Header: header,
 		},
