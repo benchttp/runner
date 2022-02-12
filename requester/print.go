@@ -10,26 +10,33 @@ import (
 	"github.com/benchttp/runner/ansi"
 )
 
-var (
-	tlBlock      = "◼︎"
-	tlBlockGrey  = ansi.Grey(tlBlock)
-	tlBlockGreen = ansi.Green(tlBlock)
-	tlLen        = 10
-)
+type state struct {
+	done             bool
+	err              error
+	reqcur, reqmax   int
+	timeout, elapsed time.Duration
+}
 
-func (r *Requester) state() string {
-	r.mu.Lock()
+func (r *Requester) state() state {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return state{
+		done:    r.done,
+		err:     r.runErr,
+		reqcur:  len(r.records),
+		reqmax:  r.config.RunnerOptions.Requests,
+		timeout: r.config.RunnerOptions.GlobalTimeout,
+		elapsed: time.Since(r.start),
+	}
+}
 
+func (s state) String() string {
 	var (
-		status    = r.status()
-		reqcur    = len(r.records)
-		reqmax    = strconv.Itoa(r.config.RunnerOptions.Requests)
-		pctdone   = r.percentDone()
-		elapsed   = time.Since(r.start)
-		countdown = r.config.RunnerOptions.GlobalTimeout - elapsed
+		countdown = s.timeout - s.elapsed
+		reqmax    = strconv.Itoa(s.reqmax)
+		pctdone   = s.percentDone()
+		timeline  = s.timeline(pctdone)
 	)
-
-	r.mu.Unlock()
 
 	if reqmax == "-1" {
 		reqmax = "∞"
@@ -38,24 +45,36 @@ func (r *Requester) state() string {
 		countdown = 0
 	}
 
+	return fmt.Sprintf(
+		"%s%s %s %d%% | %d/%s requests | %.0fs timeout             \n",
+		ansi.Erase(1), s.status(), timeline, pctdone, // progress
+		s.reqcur, reqmax, // requests
+		countdown.Seconds(), // timeout
+	)
+}
+
+var (
+	tlBlock      = "◼︎"
+	tlBlockGrey  = ansi.Grey(tlBlock)
+	tlBlockGreen = ansi.Green(tlBlock)
+	tlLen        = 10
+)
+
+func (s state) timeline(pctdone int) string {
 	tl := strings.Repeat(tlBlockGrey, tlLen)
 	for i := 0; i < tlLen; i++ {
 		if pctdone >= (tlLen * i) {
 			tl = strings.Replace(tl, tlBlockGrey, tlBlockGreen, 1)
 		}
 	}
-
-	return fmt.Sprintf(
-		"%s %s %d%% | %d/%s requests | %.0fs timeout       \r",
-		status, tl, pctdone, reqcur, reqmax, countdown.Seconds(),
-	)
+	return tl
 }
 
-func (r *Requester) status() string {
-	if !r.done {
+func (s state) status() string {
+	if !s.done {
 		return ansi.Yellow("RUNNING")
 	}
-	switch r.runErr {
+	switch s.err {
 	case nil:
 		return ansi.Green("DONE")
 	case context.Canceled:
@@ -66,12 +85,12 @@ func (r *Requester) status() string {
 	return "" // should not occur
 }
 
-func (r *Requester) percentDone() int {
+func (s state) percentDone() int {
 	var cur, max int
-	if r.config.RunnerOptions.Requests == -1 {
-		cur, max = int(time.Since(r.start)), int(r.config.RunnerOptions.GlobalTimeout)
+	if s.reqmax == -1 {
+		cur, max = int(s.elapsed), int(s.timeout)
 	} else {
-		cur, max = len(r.records), r.config.RunnerOptions.Requests
+		cur, max = s.reqcur, s.reqmax
 	}
 	return capInt((100*cur)/max, 100)
 }

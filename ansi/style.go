@@ -1,11 +1,16 @@
 package ansi
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type style string
 
 const (
 	reset style = "\033[0m"
+
+	erase style = "\033[1A"
 
 	grey   style = "\033[1;30m"
 	red    style = "\033[1;31m"
@@ -36,4 +41,15 @@ func Red(in string) string {
 
 func Grey(in string) string {
 	return withStyle(in, grey)
+}
+
+func Erase(lines int) string {
+	if lines < 1 {
+		return ""
+	}
+	var b strings.Builder
+	for i := 0; i < lines; i++ {
+		b.Write([]byte(erase))
+	}
+	return b.String()
 }

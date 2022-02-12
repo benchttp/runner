@@ -28,7 +28,7 @@ type Requester struct {
 	client http.Client
 	tracer *tracer
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 // New returns a Requester initialized with cfg. cfg is assumed valid:
@@ -70,8 +70,6 @@ func (r *Requester) Run() (Report, error) {
 		return Report{}, fmt.Errorf("%w: %s", ErrConnection, err)
 	}
 
-	r.start = time.Now()
-
 	var (
 		numWorker   = r.config.RunnerOptions.Concurrency
 		maxIter     = r.config.RunnerOptions.Requests
@@ -82,31 +80,15 @@ func (r *Requester) Run() (Report, error) {
 
 	defer cancel()
 
-	// print state every second
-	go func() {
-		ticker := time.NewTicker(time.Second)
-		tick := ticker.C
-		for {
-			if r.done {
-				ticker.Stop()
-				return
-			}
-			fmt.Print(r.state())
-			<-tick
-		}
-	}()
+	r.start = time.Now()
+	go r.refreshState()
 
-	r.runErr = dispatcher.New(numWorker).Do(ctx, maxIter, r.record(req, interval))
-	switch r.runErr {
+	switch err := dispatcher.New(numWorker).Do(ctx, maxIter, r.record(req, interval)); err {
 	case nil, context.Canceled, context.DeadlineExceeded:
+		r.end(err)
 	default:
-		return Report{}, r.runErr
+		return Report{}, err
 	}
-
-	r.done = true
-
-	// print final state
-	fmt.Println(r.state())
 
 	return makeReport(r.config, r.records, r.numErr), nil
 }
@@ -176,6 +158,31 @@ func (r *Requester) appendRecord(rec Record) {
 	if rec.Error != nil {
 		r.numErr++
 	}
+}
+
+func (r *Requester) refreshState() {
+	ticker := time.NewTicker(time.Second)
+	tick := ticker.C
+	for {
+		if r.done {
+			ticker.Stop()
+			break
+		}
+		r.printState()
+		<-tick
+	}
+}
+
+func (r *Requester) end(runErr error) {
+	r.mu.Lock()
+	r.runErr = runErr
+	r.done = true
+	r.mu.Unlock()
+	r.printState()
+}
+
+func (r *Requester) printState() {
+	fmt.Print(r.state())
 }
 
 // cloneRequest fully clones a http.Request by also cloning the body via Request.GetBody
