@@ -72,7 +72,18 @@ func run() error {
 		return err
 	}
 
-	if err := requester.New(cfg).RunAndSendReport(reportURL); err != nil {
+	req, err := cfg.HTTPRequest()
+	if err != nil {
+		return err
+	}
+
+	rep, err := requester.New(requester.Config(cfg.Runner)).Run(req)
+	if err != nil {
+		return err
+	}
+
+	// TODO: handle output
+	if err := requester.SendReport(reportURL, rep); err != nil {
 		return err
 	}
 

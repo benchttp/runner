@@ -8,13 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benchttp/runner/config"
 	"github.com/benchttp/runner/dispatcher"
-)
-
-const (
-	badURL  = "abc"
-	goodURL = "http://a.b"
 )
 
 var errTest = errors.New("test-generated error")
@@ -26,46 +20,32 @@ func TestRun(t *testing.T) {
 		exp   error
 	}{
 		{
-			label: "return ErrRequest early on request error",
-			req: New(config.Config{
-				Runner: config.Runner{
-					Requests:       -1,
-					Concurrency:    1,
-					RequestTimeout: 1 * time.Second,
-					GlobalTimeout:  0,
-				},
-			}.WithURL(badURL)),
-			exp: ErrRequest,
-		},
-		{
 			label: "return ErrConnection early on connection error",
-			req: New(config.Config{
-				Runner: config.Runner{
-					Requests:       -1,
-					Concurrency:    1,
-					RequestTimeout: 1 * time.Second,
-					GlobalTimeout:  0,
-				},
-			}.WithURL(goodURL)),
+			req: New(Config{
+				Requests:       -1,
+				Concurrency:    1,
+				RequestTimeout: 1 * time.Second,
+				GlobalTimeout:  0,
+			},
+			),
 			exp: ErrConnection,
 		},
 		{
 			label: "return dispatcher.ErrInvalidValue early on bad dispatcher value",
-			req: withNoopTransport(New(config.Config{
-				Runner: config.Runner{
-					Requests:       1,
-					Concurrency:    2, // bad: Concurrency > Requests
-					RequestTimeout: 1 * time.Second,
-					GlobalTimeout:  3 * time.Second,
-				},
-			}.WithURL(goodURL))),
+			req: withNoopTransport(New(Config{
+				Requests:       1,
+				Concurrency:    2, // bad: Concurrency > Requests
+				RequestTimeout: 1 * time.Second,
+				GlobalTimeout:  3 * time.Second,
+			},
+			)),
 			exp: dispatcher.ErrInvalidValue,
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.label, func(t *testing.T) {
-			gotRep, gotErr := tc.req.Run()
+			gotRep, gotErr := tc.req.Run(validRequest())
 
 			if !errors.Is(gotErr, tc.exp) {
 				t.Errorf("unexpected error value:\nexp %v\ngot %v", tc.exp, gotErr)
@@ -78,16 +58,14 @@ func TestRun(t *testing.T) {
 	}
 
 	t.Run("record failing requests", func(t *testing.T) {
-		r := withErrTransport(New(config.Config{
-			Runner: config.Runner{
-				Requests:       1,
-				Concurrency:    1,
-				RequestTimeout: 1 * time.Second,
-				GlobalTimeout:  3 * time.Second,
-			},
-		}.WithURL(goodURL)))
+		r := withErrTransport(New(Config{
+			Requests:       1,
+			Concurrency:    1,
+			RequestTimeout: 1 * time.Second,
+			GlobalTimeout:  3 * time.Second,
+		}))
 
-		rep, err := r.Run()
+		rep, err := r.Run(validRequest())
 		if err != nil {
 			t.Errorf("exp nil error, got %v", err)
 		}
@@ -108,16 +86,14 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("happy path", func(t *testing.T) {
-		r := withNoopTransport(New(config.Config{
-			Runner: config.Runner{
-				Requests:       1,
-				Concurrency:    1,
-				RequestTimeout: 1 * time.Second,
-				GlobalTimeout:  3 * time.Second,
-			},
-		}.WithURL(goodURL)))
+		r := withNoopTransport(New(Config{
+			Requests:       1,
+			Concurrency:    1,
+			RequestTimeout: 1 * time.Second,
+			GlobalTimeout:  3 * time.Second,
+		}))
 
-		rep, err := r.Run()
+		rep, err := r.Run(validRequest())
 		if err != nil {
 			t.Errorf("exp nil error, got %v", err)
 		}
@@ -159,14 +135,12 @@ func TestRun(t *testing.T) {
 			gotTimes = make([]time.Duration, 0, requests)
 		)
 
-		cfg := config.Config{
-			Runner: config.Runner{
-				Concurrency:   concurrency,
-				Requests:      requests,
-				Interval:      interval,
-				GlobalTimeout: 5 * time.Second,
-			},
-		}.WithURL(goodURL)
+		cfg := Config{
+			Concurrency:   concurrency,
+			Requests:      requests,
+			Interval:      interval,
+			GlobalTimeout: 5 * time.Second,
+		}
 
 		r := withCallbackTransport(New(cfg), func() {
 			defer func() {
@@ -189,7 +163,7 @@ func TestRun(t *testing.T) {
 			gotTimes = append(gotTimes, elapsed)
 		})
 
-		if _, err := r.Run(); err != nil {
+		if _, err := r.Run(validRequest()); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
@@ -257,4 +231,10 @@ func (unreadableReadCloser) Read([]byte) (int, error) {
 
 func (unreadableReadCloser) Close() error {
 	return nil
+}
+
+func validRequest() *http.Request {
+	const validURI = "http://a.b"
+	request, _ := http.NewRequest("", validURI, nil)
+	return request
 }
