@@ -77,7 +77,7 @@ func run() error {
 		return err
 	}
 
-	rep, err := requester.New(requester.Config(cfg.Runner)).Run(req)
+	rep, err := requester.New(cfg).Run(req)
 	if err != nil {
 		return err
 	}

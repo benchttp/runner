@@ -21,24 +21,23 @@ func TestRun(t *testing.T) {
 	}{
 		{
 			label: "return ErrConnection early on connection error",
-			req: New(Config{
-				Requests:       -1,
-				Concurrency:    1,
-				RequestTimeout: 1 * time.Second,
-				GlobalTimeout:  0,
+			req: New(runnerConfig{
+				requests:       -1,
+				concurrency:    1,
+				requestTimeout: 1 * time.Second,
+				globalTimeout:  0,
 			},
 			),
 			exp: ErrConnection,
 		},
 		{
 			label: "return dispatcher.ErrInvalidValue early on bad dispatcher value",
-			req: withNoopTransport(New(Config{
-				Requests:       1,
-				Concurrency:    2, // bad: Concurrency > Requests
-				RequestTimeout: 1 * time.Second,
-				GlobalTimeout:  3 * time.Second,
-			},
-			)),
+			req: withNoopTransport(New(runnerConfig{
+				requests:       1,
+				concurrency:    2, // bad: Concurrency > Requests
+				requestTimeout: 1 * time.Second,
+				globalTimeout:  3 * time.Second,
+			})),
 			exp: dispatcher.ErrInvalidValue,
 		},
 	}
@@ -58,11 +57,11 @@ func TestRun(t *testing.T) {
 	}
 
 	t.Run("record failing requests", func(t *testing.T) {
-		r := withErrTransport(New(Config{
-			Requests:       1,
-			Concurrency:    1,
-			RequestTimeout: 1 * time.Second,
-			GlobalTimeout:  3 * time.Second,
+		r := withErrTransport(New(runnerConfig{
+			requests:       1,
+			concurrency:    1,
+			requestTimeout: 1 * time.Second,
+			globalTimeout:  3 * time.Second,
 		}))
 
 		rep, err := r.Run(validRequest())
@@ -86,11 +85,11 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("happy path", func(t *testing.T) {
-		r := withNoopTransport(New(Config{
-			Requests:       1,
-			Concurrency:    1,
-			RequestTimeout: 1 * time.Second,
-			GlobalTimeout:  3 * time.Second,
+		r := withNoopTransport(New(runnerConfig{
+			requests:       1,
+			concurrency:    1,
+			requestTimeout: 1 * time.Second,
+			globalTimeout:  3 * time.Second,
 		}))
 
 		rep, err := r.Run(validRequest())
@@ -135,11 +134,11 @@ func TestRun(t *testing.T) {
 			gotTimes = make([]time.Duration, 0, requests)
 		)
 
-		cfg := Config{
-			Concurrency:   concurrency,
-			Requests:      requests,
-			Interval:      interval,
-			GlobalTimeout: 5 * time.Second,
+		cfg := runnerConfig{
+			concurrency:   concurrency,
+			requests:      requests,
+			interval:      interval,
+			globalTimeout: 5 * time.Second,
 		}
 
 		r := withCallbackTransport(New(cfg), func() {
@@ -195,6 +194,32 @@ func TestRun(t *testing.T) {
 }
 
 // helpers
+
+// runnerConfig implements requester.Config
+type runnerConfig struct {
+	requests, concurrency                   int
+	interval, requestTimeout, globalTimeout time.Duration
+}
+
+func (cfg runnerConfig) Requests() int {
+	return cfg.requests
+}
+
+func (cfg runnerConfig) Concurrency() int {
+	return cfg.concurrency
+}
+
+func (cfg runnerConfig) Interval() time.Duration {
+	return cfg.interval
+}
+
+func (cfg runnerConfig) RequestTimeout() time.Duration {
+	return cfg.requestTimeout
+}
+
+func (cfg runnerConfig) GlobalTimeout() time.Duration {
+	return cfg.globalTimeout
+}
 
 type callbackTransport struct{ callback func() }
 
