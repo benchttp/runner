@@ -20,6 +20,7 @@ const (
 type Requester struct {
 	records []Record
 	numErr  int
+	runErr  error
 	start   time.Time
 	done    bool
 
@@ -95,8 +96,11 @@ func (r *Requester) Run() (Report, error) {
 		}
 	}()
 
-	if err := dispatcher.New(numWorker).Do(ctx, maxIter, r.record(req, interval)); err != nil {
-		return Report{}, err
+	r.runErr = dispatcher.New(numWorker).Do(ctx, maxIter, r.record(req, interval))
+	switch r.runErr {
+	case nil, context.Canceled, context.DeadlineExceeded:
+	default:
+		return Report{}, r.runErr
 	}
 
 	r.done = true

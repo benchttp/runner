@@ -1,6 +1,7 @@
 package requester
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -10,26 +11,25 @@ import (
 )
 
 var (
-	status = map[bool]string{
-		false: ansi.Yellow("Running"),
-		true:  ansi.Green("Done"),
-	}
-	tlBlock     = "◼︎"
-	tlBlockGrey = ansi.Grey(tlBlock)
-	tlLen       = 10
+	tlBlock      = "◼︎"
+	tlBlockGrey  = ansi.Grey(tlBlock)
+	tlBlockGreen = ansi.Green(tlBlock)
+	tlLen        = 10
 )
 
 func (r *Requester) state() string {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 
 	var (
+		status    = r.status()
 		reqcur    = len(r.records)
 		reqmax    = strconv.Itoa(r.config.RunnerOptions.Requests)
 		pctdone   = r.percentDone()
 		elapsed   = time.Since(r.start)
 		countdown = r.config.RunnerOptions.GlobalTimeout - elapsed
 	)
+
+	r.mu.Unlock()
 
 	if reqmax == "-1" {
 		reqmax = "∞"
@@ -41,14 +41,29 @@ func (r *Requester) state() string {
 	tl := strings.Repeat(tlBlockGrey, tlLen)
 	for i := 0; i < tlLen; i++ {
 		if pctdone >= (tlLen * i) {
-			tl = strings.Replace(tl, tlBlockGrey, tlBlock, 1)
+			tl = strings.Replace(tl, tlBlockGrey, tlBlockGreen, 1)
 		}
 	}
 
 	return fmt.Sprintf(
-		"%s %d%% %s | %d/%s requests | %.0fs timeout       \r",
-		status[r.done], pctdone, tl, reqcur, reqmax, countdown.Seconds(),
+		"%s %s %d%% | %d/%s requests | %.0fs timeout       \r",
+		status, tl, pctdone, reqcur, reqmax, countdown.Seconds(),
 	)
+}
+
+func (r *Requester) status() string {
+	if !r.done {
+		return ansi.Yellow("RUNNING")
+	}
+	switch r.runErr {
+	case nil:
+		return ansi.Green("DONE")
+	case context.Canceled:
+		return ansi.Cyan("CANCELED")
+	case context.DeadlineExceeded:
+		return ansi.Cyan("TIMEOUT")
+	}
+	return "" // should not occur
 }
 
 func (r *Requester) percentDone() int {
