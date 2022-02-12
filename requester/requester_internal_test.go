@@ -47,7 +47,7 @@ func TestRun(t *testing.T) {
 			label: "return ErrConnection early on connection error",
 			req: New(config.Config{
 				Request: config.Request{
-					Timeout: 0,
+					Timeout: 1,
 					Body:    *emptyBody,
 				},
 				RunnerOptions: config.RunnerOptions{
