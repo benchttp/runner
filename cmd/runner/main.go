@@ -57,6 +57,8 @@ func parseArgs() {
 	flag.DurationVar(&interval, "interval", 0, "Minimum duration between two non concurrent requests")
 	// global timeout
 	flag.DurationVar(&globalTimeout, config.FieldGlobalTimeout, 0, "Max duration of test")
+	// request method
+	flag.StringVar(&method, config.FieldMethod, "", "HTTP request method")
 	// body type
 	flag.StringVar(&bodyType, config.FieldBodyType, "", "HTTP body type")
 	// body content
