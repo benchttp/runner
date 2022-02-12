@@ -24,7 +24,7 @@ var (
 		".yaml",
 		".json",
 	}
-	emptyBody, _ = config.NewBody("", "")
+	validBody, _ = config.NewBody("application/json", "{\"key0\": \"val0\", \"key1\": \"val1\"}")
 )
 
 // TestParse ensures the config file is open, read, and correctly parsed.
@@ -141,14 +141,14 @@ func newExpConfig() config.Config {
 	u, _ := url.ParseRequestURI(testURL)
 	return config.Config{
 		Request: config.Request{
-			Method: "GET",
+			Method: "POST",
 			URL:    u,
 			Header: http.Header{
 				"key0": []string{"val0", "val1"},
 				"key1": []string{"val0"},
 			},
 			Timeout: 2 * time.Second,
-			Body:    *emptyBody,
+			Body:    *validBody,
 		},
 
 		RunnerOptions: config.RunnerOptions{

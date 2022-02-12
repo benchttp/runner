@@ -193,9 +193,9 @@ type unmarshaledConfig struct {
 		Header      map[string][]string `yaml:"header" json:"header"`
 		Timeout     *string             `yaml:"timeout" json:"timeout"`
 		Body        struct {
-			Type    *string                 `yaml:"bodyType" json:"bodyType"`
-			Content *map[string]interface{} `yaml:"bodyContent" json:"bodyContent"`
-		}
+			Type    *string                 `yaml:"type" json:"type"`
+			Content *map[string]interface{} `yaml:"content" json:"content"`
+		} `yaml:"body" json:"body"`
 	} `yaml:"request" json:"request"`
 
 	RunnerOptions struct {
