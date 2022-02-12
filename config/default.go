@@ -10,7 +10,7 @@ var defaultConfig = Config{
 		Method: "GET",
 		URL:    &url.URL{},
 	},
-	RunnerOptions: RunnerOptions{
+	Runner: Runner{
 		Concurrency:    1,
 		Requests:       -1, // Use GlobalTimeout as exit condition.
 		RequestTimeout: 10 * time.Second,

@@ -32,7 +32,7 @@ type Requester struct {
 // it is the caller's responsibility to ensure cfg is valid using
 // cfg.Validate.
 func New(cfg config.Config) *Requester {
-	recordsCap := cfg.RunnerOptions.Requests
+	recordsCap := cfg.Runner.Requests
 	if recordsCap < 1 {
 		recordsCap = defaultRecordsCap
 	}
@@ -47,7 +47,7 @@ func New(cfg config.Config) *Requester {
 			// Timeout includes connection time, any redirects, and reading
 			// the response body.
 			// We may want exclude reading the response body in our benchmark tool.
-			Timeout: cfg.RunnerOptions.RequestTimeout,
+			Timeout: cfg.Runner.RequestTimeout,
 
 			// tracer keeps track of all events of the current request.
 			Transport: tracer,
@@ -68,10 +68,10 @@ func (r *Requester) Run() (Report, error) {
 	}
 
 	var (
-		numWorker   = r.config.RunnerOptions.Concurrency
-		maxIter     = r.config.RunnerOptions.Requests
-		timeout     = r.config.RunnerOptions.GlobalTimeout
-		interval    = r.config.RunnerOptions.Interval
+		numWorker   = r.config.Runner.Concurrency
+		maxIter     = r.config.Runner.Requests
+		timeout     = r.config.Runner.GlobalTimeout
+		interval    = r.config.Runner.Interval
 		ctx, cancel = context.WithTimeout(context.Background(), timeout)
 	)
 

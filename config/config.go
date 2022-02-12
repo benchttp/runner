@@ -16,8 +16,8 @@ type Request struct {
 	Header http.Header
 }
 
-// RunnerOptions contains options relative to the runner.
-type RunnerOptions struct {
+// Runner contains options relative to the runner.
+type Runner struct {
 	Requests       int
 	Concurrency    int
 	Interval       time.Duration
@@ -28,8 +28,8 @@ type RunnerOptions struct {
 // Config represents the configuration of the runner.
 // It must be validated using Config.Validate before usage.
 type Config struct {
-	Request       Request
-	RunnerOptions RunnerOptions
+	Request Request
+	Runner  Runner
 }
 
 // String returns an indented JSON representation of Config
@@ -71,15 +71,15 @@ func (cfg Config) Override(c Config, fields ...string) Config {
 		case FieldHeader:
 			cfg.overrideHeader(c.Request.Header)
 		case FieldRequests:
-			cfg.RunnerOptions.Requests = c.RunnerOptions.Requests
+			cfg.Runner.Requests = c.Runner.Requests
 		case FieldConcurrency:
-			cfg.RunnerOptions.Concurrency = c.RunnerOptions.Concurrency
+			cfg.Runner.Concurrency = c.Runner.Concurrency
 		case FieldInterval:
-			cfg.RunnerOptions.Interval = c.RunnerOptions.Interval
+			cfg.Runner.Interval = c.Runner.Interval
 		case FieldRequestTimeout:
-			cfg.RunnerOptions.RequestTimeout = c.RunnerOptions.RequestTimeout
+			cfg.Runner.RequestTimeout = c.Runner.RequestTimeout
 		case FieldGlobalTimeout:
-			cfg.RunnerOptions.GlobalTimeout = c.RunnerOptions.GlobalTimeout
+			cfg.Runner.GlobalTimeout = c.Runner.GlobalTimeout
 		}
 	}
 	return cfg
@@ -120,24 +120,24 @@ func (cfg Config) Validate() error { //nolint:gocognit
 		inputErrors = append(inputErrors, fmt.Errorf("-url: %s is not a valid url", cfg.Request.URL.String()))
 	}
 
-	if cfg.RunnerOptions.Requests < 1 && cfg.RunnerOptions.Requests != -1 {
-		inputErrors = append(inputErrors, fmt.Errorf("-requests: must be >= 0, we got %d", cfg.RunnerOptions.Requests))
+	if cfg.Runner.Requests < 1 && cfg.Runner.Requests != -1 {
+		inputErrors = append(inputErrors, fmt.Errorf("-requests: must be >= 0, we got %d", cfg.Runner.Requests))
 	}
 
-	if cfg.RunnerOptions.Concurrency < 1 && cfg.RunnerOptions.Concurrency != -1 {
-		inputErrors = append(inputErrors, fmt.Errorf("-concurrency: must be > 0, we got %d", cfg.RunnerOptions.Concurrency))
+	if cfg.Runner.Concurrency < 1 && cfg.Runner.Concurrency != -1 {
+		inputErrors = append(inputErrors, fmt.Errorf("-concurrency: must be > 0, we got %d", cfg.Runner.Concurrency))
 	}
 
-	if cfg.RunnerOptions.Interval < 0 {
-		inputErrors = append(inputErrors, fmt.Errorf("-interval: must be > 0, we got %d", cfg.RunnerOptions.Interval))
+	if cfg.Runner.Interval < 0 {
+		inputErrors = append(inputErrors, fmt.Errorf("-interval: must be > 0, we got %d", cfg.Runner.Interval))
 	}
 
-	if cfg.RunnerOptions.RequestTimeout < 0 {
-		inputErrors = append(inputErrors, fmt.Errorf("-timeout: must be > 0, we got %d", cfg.RunnerOptions.RequestTimeout))
+	if cfg.Runner.RequestTimeout < 0 {
+		inputErrors = append(inputErrors, fmt.Errorf("-timeout: must be > 0, we got %d", cfg.Runner.RequestTimeout))
 	}
 
-	if cfg.RunnerOptions.GlobalTimeout < 0 {
-		inputErrors = append(inputErrors, fmt.Errorf("-globalTimeout: must be > 0, we got %d", cfg.RunnerOptions.GlobalTimeout))
+	if cfg.Runner.GlobalTimeout < 0 {
+		inputErrors = append(inputErrors, fmt.Errorf("-globalTimeout: must be > 0, we got %d", cfg.Runner.GlobalTimeout))
 	}
 
 	if len(inputErrors) > 0 {

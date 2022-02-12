@@ -10,7 +10,7 @@
       "key1": ["val0"]
     }
   },
-  "runnerOptions": {
+  "runner": {
     "requests": 100,
     "concurrency": 1,
     "interval": "50ms",

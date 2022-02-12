@@ -28,7 +28,7 @@ func TestRun(t *testing.T) {
 		{
 			label: "return ErrRequest early on request error",
 			req: New(config.Config{
-				RunnerOptions: config.RunnerOptions{
+				Runner: config.Runner{
 					Requests:       -1,
 					Concurrency:    1,
 					RequestTimeout: 1 * time.Second,
@@ -40,7 +40,7 @@ func TestRun(t *testing.T) {
 		{
 			label: "return ErrConnection early on connection error",
 			req: New(config.Config{
-				RunnerOptions: config.RunnerOptions{
+				Runner: config.Runner{
 					Requests:       -1,
 					Concurrency:    1,
 					RequestTimeout: 1 * time.Second,
@@ -52,7 +52,7 @@ func TestRun(t *testing.T) {
 		{
 			label: "return dispatcher.ErrInvalidValue early on bad dispatcher value",
 			req: withNoopTransport(New(config.Config{
-				RunnerOptions: config.RunnerOptions{
+				Runner: config.Runner{
 					Requests:       1,
 					Concurrency:    2, // bad: Concurrency > Requests
 					RequestTimeout: 1 * time.Second,
@@ -79,7 +79,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("record failing requests", func(t *testing.T) {
 		r := withErrTransport(New(config.Config{
-			RunnerOptions: config.RunnerOptions{
+			Runner: config.Runner{
 				Requests:       1,
 				Concurrency:    1,
 				RequestTimeout: 1 * time.Second,
@@ -109,7 +109,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("happy path", func(t *testing.T) {
 		r := withNoopTransport(New(config.Config{
-			RunnerOptions: config.RunnerOptions{
+			Runner: config.Runner{
 				Requests:       1,
 				Concurrency:    1,
 				RequestTimeout: 1 * time.Second,
@@ -160,7 +160,7 @@ func TestRun(t *testing.T) {
 		)
 
 		cfg := config.Config{
-			RunnerOptions: config.RunnerOptions{
+			Runner: config.Runner{
 				Concurrency:   concurrency,
 				Requests:      requests,
 				Interval:      interval,

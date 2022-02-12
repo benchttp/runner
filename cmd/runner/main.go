@@ -92,7 +92,7 @@ func parseConfig() (cfg config.Config, err error) {
 		Request: config.Request{
 			Header: header,
 		},
-		RunnerOptions: config.RunnerOptions{
+		Runner: config.Runner{
 			Requests:       requests,
 			Concurrency:    concurrency,
 			Interval:       interval,

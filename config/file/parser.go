@@ -193,11 +193,11 @@ type unmarshaledConfig struct {
 		Header      map[string][]string `yaml:"header" json:"header"`
 	} `yaml:"request" json:"request"`
 
-	RunnerOptions struct {
+	Runner struct {
 		Requests       *int    `yaml:"requests" json:"requests"`
 		Concurrency    *int    `yaml:"concurrency" json:"concurrency"`
 		Interval       *string `yaml:"interval" json:"interval"`
 		RequestTimeout *string `yaml:"requestTimeout" json:"requestTimeout"`
 		GlobalTimeout  *string `yaml:"globalTimeout" json:"globalTimeout"`
-	} `yaml:"runnerOptions" json:"runnerOptions"`
+	} `yaml:"runner" json:"runner"`
 }

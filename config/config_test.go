@@ -14,7 +14,7 @@ import (
 func TestValidate(t *testing.T) {
 	t.Run("test valid configuration", func(t *testing.T) {
 		cfg := config.Config{
-			RunnerOptions: config.RunnerOptions{
+			Runner: config.Runner{
 				Requests:       5,
 				Concurrency:    5,
 				RequestTimeout: 5,
@@ -29,7 +29,7 @@ func TestValidate(t *testing.T) {
 
 	t.Run("test invalid configuration returns ErrInvalid error with correct messages", func(t *testing.T) {
 		cfg := config.Config{
-			RunnerOptions: config.RunnerOptions{
+			Runner: config.Runner{
 				Requests:       -5,
 				Concurrency:    -5,
 				RequestTimeout: -5,
@@ -84,7 +84,7 @@ func TestOverride(t *testing.T) {
 	t.Run("do not override unspecified fields", func(t *testing.T) {
 		baseCfg := config.Config{}
 		newCfg := config.Config{
-			RunnerOptions: config.RunnerOptions{
+			Runner: config.Runner{
 				Requests:       1,
 				Concurrency:    2,
 				RequestTimeout: 3 * time.Second,
@@ -100,7 +100,7 @@ func TestOverride(t *testing.T) {
 	t.Run("override specified fields", func(t *testing.T) {
 		baseCfg := config.Config{}
 		newCfg := config.Config{
-			RunnerOptions: config.RunnerOptions{
+			Runner: config.Runner{
 				Requests:       1,
 				Concurrency:    2,
 				RequestTimeout: 3 * time.Second,
