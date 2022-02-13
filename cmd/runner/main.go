@@ -102,7 +102,7 @@ func parseConfig() (cfg config.Global, err error) {
 	cliCfg := config.Global{
 		Request: config.Request{
 			Header: header,
-		},
+		}.WithURL(uri),
 		Runner: config.Runner{
 			Requests:       requests,
 			Concurrency:    concurrency,
@@ -110,7 +110,7 @@ func parseConfig() (cfg config.Global, err error) {
 			RequestTimeout: requestTimeout,
 			GlobalTimeout:  globalTimeout,
 		},
-	}.WithURL(uri)
+	}
 
 	mergedConfig := fileCfg.Override(cliCfg, configFlags()...)
 

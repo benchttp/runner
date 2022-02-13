@@ -14,13 +14,14 @@ import (
 func TestValidate(t *testing.T) {
 	t.Run("test valid configuration", func(t *testing.T) {
 		cfg := config.Global{
+			Request: config.Request{}.WithURL("https://github.com/benchttp/"),
 			Runner: config.Runner{
 				Requests:       5,
 				Concurrency:    5,
 				RequestTimeout: 5,
 				GlobalTimeout:  5,
 			},
-		}.WithURL("https://github.com/benchttp/")
+		}
 		err := cfg.Validate()
 		if err != nil {
 			t.Errorf("valid configuration not considered as such")
@@ -29,13 +30,14 @@ func TestValidate(t *testing.T) {
 
 	t.Run("test invalid configuration returns ErrInvalid error with correct messages", func(t *testing.T) {
 		cfg := config.Global{
+			Request: config.Request{}.WithURL("github-com/benchttp"),
 			Runner: config.Runner{
 				Requests:       -5,
 				Concurrency:    -5,
 				RequestTimeout: -5,
 				GlobalTimeout:  -5,
 			},
-		}.WithURL("github-com/benchttp")
+		}
 		err := cfg.Validate()
 		if err == nil {
 			t.Errorf("invalid configuration considered valid")
@@ -61,7 +63,7 @@ func TestValidate(t *testing.T) {
 
 func TestWithURL(t *testing.T) {
 	t.Run("set empty url if invalid", func(t *testing.T) {
-		cfg := config.Global{}.WithURL("abc")
+		cfg := config.Global{Request: config.Request{}.WithURL("abc")}
 		if got := cfg.Request.URL; !reflect.DeepEqual(got, &url.URL{}) {
 			t.Errorf("exp empty *url.URL, got %v", got)
 		}
@@ -71,7 +73,7 @@ func TestWithURL(t *testing.T) {
 		var (
 			rawURL    = "http://benchttp.app?cool=true"
 			expURL, _ = url.ParseRequestURI(rawURL)
-			gotURL    = config.Global{}.WithURL(rawURL).Request.URL
+			gotURL    = config.Request{}.WithURL(rawURL).URL
 		)
 
 		if !reflect.DeepEqual(gotURL, expURL) {
@@ -84,13 +86,14 @@ func TestOverride(t *testing.T) {
 	t.Run("do not override unspecified fields", func(t *testing.T) {
 		baseCfg := config.Global{}
 		newCfg := config.Global{
+			Request: config.Request{}.WithURL("http://a.b?p=2"),
 			Runner: config.Runner{
 				Requests:       1,
 				Concurrency:    2,
 				RequestTimeout: 3 * time.Second,
 				GlobalTimeout:  4 * time.Second,
 			},
-		}.WithURL("http://a.b?p=2")
+		}
 
 		if gotCfg := baseCfg.Override(newCfg); !reflect.DeepEqual(gotCfg, baseCfg) {
 			t.Errorf("overrode unexpected fields:\nexp %#v\ngot %#v", baseCfg, gotCfg)
@@ -100,13 +103,14 @@ func TestOverride(t *testing.T) {
 	t.Run("override specified fields", func(t *testing.T) {
 		baseCfg := config.Global{}
 		newCfg := config.Global{
+			Request: config.Request{}.WithURL("http://a.b?p=2"),
 			Runner: config.Runner{
 				Requests:       1,
 				Concurrency:    2,
 				RequestTimeout: 3 * time.Second,
 				GlobalTimeout:  4 * time.Second,
 			},
-		}.WithURL("http://a.b?p=2")
+		}
 		fields := []string{
 			config.FieldMethod,
 			config.FieldURL,

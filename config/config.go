@@ -35,6 +35,19 @@ func (r Request) HTTP() (*http.Request, error) {
 	return req, nil
 }
 
+// WithURL sets the current Request with the parsed *url.URL from rawURL
+// and returns it. Any errors is discarded as a Config can be invalid
+// until Config.Validate is called. The url is always non-nil.
+func (r Request) WithURL(rawURL string) Request {
+	// ignore err: a Config can be invalid at this point
+	urlURL, _ := url.ParseRequestURI(rawURL)
+	if urlURL == nil {
+		urlURL = &url.URL{}
+	}
+	r.URL = urlURL
+	return r
+}
+
 // Runner contains options relative to the runner.
 type Runner struct {
 	Requests       int
@@ -95,19 +108,6 @@ func (cfg *Global) overrideHeader(newHeader http.Header) {
 	for k, v := range newHeader {
 		cfg.Request.Header[k] = v
 	}
-}
-
-// WithURL sets the current Config to the parsed *url.URL from rawURL
-// and returns it. Any errors is discarded as a Config can be invalid
-// until Config.Validate is called. The url is guaranteed not to be nil.
-func (cfg Global) WithURL(rawURL string) Global {
-	// ignore err: a Config can be invalid at this point
-	urlURL, _ := url.ParseRequestURI(rawURL)
-	if urlURL == nil {
-		urlURL = &url.URL{}
-	}
-	cfg.Request.URL = urlURL
-	return cfg
 }
 
 // Validate returns the config and a not nil ErrInvalid if any of the fields provided by the user is not valid
