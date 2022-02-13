@@ -18,8 +18,8 @@ const (
 )
 
 var (
-	errTest      = errors.New("test-generated error")
-	validBody, _ = config.NewBody("application/json", "{\"key\": \"value\", \"key1\": \"value1\"}")
+	errTest   = errors.New("test-generated error")
+	validBody = "{\"key\": \"value\", \"key1\": \"value1\"}"
 )
 
 func TestRun(t *testing.T) {
@@ -34,7 +34,7 @@ func TestRun(t *testing.T) {
 				Request: config.Request{
 					Method:  "POST",
 					Timeout: 0,
-					Body:    *validBody,
+					Body:    validBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      -1,
@@ -50,7 +50,7 @@ func TestRun(t *testing.T) {
 				Request: config.Request{
 					Method:  "POST",
 					Timeout: 1,
-					Body:    *validBody,
+					Body:    validBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      -1,
@@ -66,7 +66,7 @@ func TestRun(t *testing.T) {
 				Request: config.Request{
 					Method:  "POST",
 					Timeout: time.Second,
-					Body:    *validBody,
+					Body:    validBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      1,
@@ -97,7 +97,7 @@ func TestRun(t *testing.T) {
 			Request: config.Request{
 				Method:  "POST",
 				Timeout: time.Second,
-				Body:    *validBody,
+				Body:    validBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,
@@ -131,7 +131,7 @@ func TestRun(t *testing.T) {
 			Request: config.Request{
 				Method:  "POST",
 				Timeout: time.Second,
-				Body:    *validBody,
+				Body:    validBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,

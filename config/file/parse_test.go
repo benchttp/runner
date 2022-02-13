@@ -18,14 +18,11 @@ const (
 	testURL            = "http://localhost:9999?fib=30&delay=200ms"
 )
 
-var (
-	supportedExt = []string{
-		".yml",
-		".yaml",
-		".json",
-	}
-	validBody, _ = config.NewBody("application/json", "{\"key0\": \"val0\", \"key1\": \"val1\"}")
-)
+var supportedExt = []string{
+	".yml",
+	".yaml",
+	".json",
+}
 
 // TestParse ensures the config file is open, read, and correctly parsed.
 func TestParse(t *testing.T) {
@@ -148,7 +145,7 @@ func newExpConfig() config.Config {
 				"key1": []string{"val0"},
 			},
 			Timeout: 2 * time.Second,
-			Body:    *validBody,
+			Body:    "{\"key0\":\"val0\",\"key1\":\"val1\"}",
 		},
 
 		RunnerOptions: config.RunnerOptions{
