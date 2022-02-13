@@ -5,14 +5,12 @@ import (
 	"time"
 )
 
-var emptyBodyContentMap = make(map[string]interface{})
-
 var defaultConfig = Config{
 	Request: Request{
 		Method:  "GET",
 		URL:     &url.URL{},
 		Timeout: 10 * time.Second,
-		Body:    Body{"", emptyBodyContentMap},
+		Body:    "",
 	},
 	RunnerOptions: RunnerOptions{
 		Concurrency:   1,
