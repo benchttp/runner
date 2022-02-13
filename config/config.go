@@ -1,36 +1,15 @@
 package config
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
 	"time"
 )
-
-type Body struct {
-	Type    string                 `json:"type"`
-	Content map[string]interface{} `json:"content"`
-}
-
-func NewBody(bodyType, bodyContent string) (*Body, error) {
-	var body Body
-	body.Type = bodyType
-	bodyContentMap := make(map[string]interface{})
-	if !reflect.DeepEqual("", bodyContent) {
-		err := json.Unmarshal([]byte(bodyContent), &bodyContentMap)
-		if err != nil {
-			return nil, errors.New("bodyContent is not valid json data")
-		}
-	}
-	body.Content = bodyContentMap
-	return &body, nil
-}
-
-var contentTypeValidValues = []string{"application/json"}
 
 // Request contains the confing options relative to a single request.
 type Request struct {
@@ -38,7 +17,7 @@ type Request struct {
 	URL     *url.URL
 	Header  http.Header
 	Timeout time.Duration
-	Body    Body
+	Body    string
 }
 
 // RunnerOptions contains options relative to the runner.
@@ -77,12 +56,8 @@ func (cfg Config) HTTPRequest() (*http.Request, error) {
 	if reflect.ValueOf(cfg.Request.Body).IsZero() {
 		return http.NewRequest(cfg.Request.Method, rawURL, nil)
 	}
-	bodyData, err := json.Marshal(cfg.Request.Body.Content)
-	if err != nil {
-		return nil, errors.New("bad body")
-	}
 
-	req, err := http.NewRequest(cfg.Request.Method, rawURL, bytes.NewReader(bodyData))
+	req, err := http.NewRequest(cfg.Request.Method, rawURL, strings.NewReader(cfg.Request.Body))
 	if err != nil {
 		return nil, err
 	}
@@ -112,10 +87,8 @@ func (cfg Config) Override(c Config, fields ...string) Config {
 			cfg.RunnerOptions.Interval = c.RunnerOptions.Interval
 		case FieldGlobalTimeout:
 			cfg.RunnerOptions.GlobalTimeout = c.RunnerOptions.GlobalTimeout
-		case FieldBodyType:
-			cfg.Request.Body.Type = c.Request.Body.Type
-		case FieldBodyContent:
-			cfg.Request.Body.Content = c.Request.Body.Content
+		case FieldBody:
+			cfg.Request.Body = c.Request.Body
 		}
 	}
 	return cfg
@@ -174,21 +147,6 @@ func (cfg Config) Validate() error { //nolint:gocognit
 
 	if cfg.RunnerOptions.GlobalTimeout < 0 {
 		inputErrors = append(inputErrors, fmt.Errorf("-globalTimeout: must be > 0, we got %d", cfg.RunnerOptions.GlobalTimeout))
-	}
-
-	if !reflect.ValueOf(cfg.Request.Body).IsZero() {
-		if len(cfg.Request.Body.Content) == 0 {
-			inputErrors = append(inputErrors, fmt.Errorf("-bodyContent: you must provide a value if you have added a bodyType"))
-		}
-		if reflect.ValueOf(cfg.Request.Body.Type).IsZero() {
-			inputErrors = append(inputErrors, fmt.Errorf("-bodyType: you must provide a value if you have added a bodyContent"))
-		} else if !contains(contentTypeValidValues, cfg.Request.Body.Type) {
-			if cfg.Request.Body.Type == "" {
-				inputErrors = append(inputErrors, fmt.Errorf("-bodyType: invalid value\n	valid value(s): %s \n	got: nothing", contentTypeValidValues))
-			} else {
-				inputErrors = append(inputErrors, fmt.Errorf("-bodyType: invalid value\n	valid value(s): %s \n	got: %s", contentTypeValidValues, cfg.Request.Body.Type))
-			}
-		}
 	}
 
 	if len(inputErrors) > 0 {
