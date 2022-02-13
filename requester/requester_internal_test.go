@@ -19,7 +19,7 @@ const (
 
 var (
 	errTest      = errors.New("test-generated error")
-	emptyBody, _ = config.NewBody("", "")
+	validBody, _ = config.NewBody("application/json", "{\"key\": \"value\", \"key1\": \"value1\"}")
 )
 
 func TestRun(t *testing.T) {
@@ -32,8 +32,9 @@ func TestRun(t *testing.T) {
 			label: "return ErrRequest early on request error",
 			req: New(config.Config{
 				Request: config.Request{
+					Method:  "POST",
 					Timeout: 0,
-					Body:    *emptyBody,
+					Body:    *validBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      -1,
@@ -47,8 +48,9 @@ func TestRun(t *testing.T) {
 			label: "return ErrConnection early on connection error",
 			req: New(config.Config{
 				Request: config.Request{
+					Method:  "POST",
 					Timeout: 1,
-					Body:    *emptyBody,
+					Body:    *validBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      -1,
@@ -62,8 +64,9 @@ func TestRun(t *testing.T) {
 			label: "return dispatcher.ErrInvalidValue early on bad dispatcher value",
 			req: withNoopTransport(New(config.Config{
 				Request: config.Request{
+					Method:  "POST",
 					Timeout: time.Second,
-					Body:    *emptyBody,
+					Body:    *validBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      1,
@@ -92,8 +95,9 @@ func TestRun(t *testing.T) {
 	t.Run("record failing requests", func(t *testing.T) {
 		r := withErrTransport(New(config.Config{
 			Request: config.Request{
+				Method:  "POST",
 				Timeout: time.Second,
-				Body:    *emptyBody,
+				Body:    *validBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,
@@ -125,8 +129,9 @@ func TestRun(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		r := withNoopTransport(New(config.Config{
 			Request: config.Request{
+				Method:  "POST",
 				Timeout: time.Second,
-				Body:    *emptyBody,
+				Body:    *validBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,
