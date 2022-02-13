@@ -29,7 +29,7 @@ var (
 	interval      time.Duration // Minimum duration between two groups of requests
 	globalTimeout time.Duration // Duration of test
 	method        string        // HTTP request method
-	body          string        // HTTP body type (format "type:data", only possible type value for the moment: "raw")
+	body          string        // HTTP body type (format "bodyType:bodyContent", only possible bodyType value for the moment: "raw")
 )
 
 var defaultConfigFiles = []string{
