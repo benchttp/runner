@@ -29,8 +29,7 @@ var (
 	interval      time.Duration // Minimum duration between two groups of requests
 	globalTimeout time.Duration // Duration of test
 	method        string        // HTTP request method
-	bodyType      string        // HTTP body type ("application/json" accepted)
-	bodyContent   string        // HTTP request body content as JSON
+	body          string        // HTTP body type (format "type:data", only possible type value for the moment: "raw")
 )
 
 var defaultConfigFiles = []string{
@@ -59,10 +58,8 @@ func parseArgs() {
 	flag.DurationVar(&globalTimeout, config.FieldGlobalTimeout, 0, "Max duration of test")
 	// request method
 	flag.StringVar(&method, config.FieldMethod, "", "HTTP request method")
-	// body type
-	flag.StringVar(&bodyType, config.FieldBodyType, "", "HTTP body type")
-	// body content
-	flag.StringVar(&bodyContent, config.FieldBodyContent, "", "HTTP request body content as JSON (you must escape double quotes in the object)")
+	// body
+	flag.StringVar(&body, config.FieldBody, "", "HTTP body type")
 	flag.Parse()
 }
 
@@ -96,16 +93,11 @@ func parseConfig() (cfg config.Config, err error) {
 		return
 	}
 
-	body, err := config.NewBody(bodyType, bodyContent)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	cliCfg := config.Config{
 		Request: config.Request{
 			Header:  header,
 			Timeout: timeout,
-			Body:    *body,
+			Body:    body,
 		},
 		RunnerOptions: config.RunnerOptions{
 			Requests:      requests,

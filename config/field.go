@@ -9,14 +9,13 @@ const (
 	FieldConcurrency   = "concurrency"
 	FieldInterval      = "interval"
 	FieldGlobalTimeout = "globalTimeout"
-	FieldBodyType      = "bodyType"
-	FieldBodyContent   = "bodyContent"
+	FieldBody          = "body"
 )
 
 func IsField(v string) bool {
 	switch v {
 	case FieldMethod, FieldURL, FieldHeader, FieldTimeout, FieldRequests,
-		FieldConcurrency, FieldInterval, FieldGlobalTimeout, FieldBodyType, FieldBodyContent:
+		FieldConcurrency, FieldInterval, FieldGlobalTimeout, FieldBody:
 		return true
 	}
 	return false
