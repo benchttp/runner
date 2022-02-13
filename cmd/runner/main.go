@@ -95,7 +95,7 @@ func parseConfig() (cfg config.Config, err error) {
 
 	bodyContent, err := config.GetBodyContent(body)
 	if err != nil {
-		fmt.Println(err)
+		return cfg, nil
 	}
 
 	cliCfg := config.Config{
