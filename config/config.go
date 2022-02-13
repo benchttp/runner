@@ -177,14 +177,3 @@ func GetBodyContent(rawBody string) (string, error) {
 	}
 	return "", nil
 }
-
-// helpers
-// Check that a value is present in a string slice
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
