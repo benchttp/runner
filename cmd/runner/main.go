@@ -72,7 +72,7 @@ func run() error {
 		return err
 	}
 
-	req, err := cfg.HTTPRequest()
+	req, err := cfg.Request.HTTP()
 	if err != nil {
 		return err
 	}

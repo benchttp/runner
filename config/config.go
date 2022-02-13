@@ -16,6 +16,25 @@ type Request struct {
 	Header http.Header
 }
 
+// HTTP generates a *http.Request based on Request and returns it
+// or any non-nil error that occurred.
+func (r Request) HTTP() (*http.Request, error) {
+	if r.URL == nil {
+		return nil, errors.New("empty url")
+	}
+	rawURL := r.URL.String()
+	if _, err := url.ParseRequestURI(rawURL); err != nil {
+		return nil, errors.New("bad url")
+	}
+	// TODO: handle body
+	req, err := http.NewRequest(r.Method, rawURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header = r.Header
+	return req, nil
+}
+
 // Runner contains options relative to the runner.
 type Runner struct {
 	Requests       int
@@ -37,25 +56,6 @@ type Global struct {
 func (cfg Global) String() string {
 	b, _ := json.MarshalIndent(cfg, "", "  ")
 	return string(b)
-}
-
-// HTTPRequest returns a *http.Request created from Target. Returns any non-nil
-// error that occurred.
-func (cfg Global) HTTPRequest() (*http.Request, error) {
-	if cfg.Request.URL == nil {
-		return nil, errors.New("empty url")
-	}
-	rawURL := cfg.Request.URL.String()
-	if _, err := url.ParseRequestURI(rawURL); err != nil {
-		return nil, errors.New("bad url")
-	}
-	// TODO: handle body
-	req, err := http.NewRequest(cfg.Request.Method, rawURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header = cfg.Request.Header
-	return req, nil
 }
 
 // Override returns a new Config based on cfg with overridden values from c.
