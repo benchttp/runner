@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/benchttp/runner/config"
@@ -46,7 +47,7 @@ func Parse(cfgpath string) (cfg config.Config, err error) {
 // or the first non-nil error occurring in the process.
 func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:gocognit // acceptable complexity for a parsing func
 	cfg := config.Config{}
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 9)
 
 	if method := raw.Request.Method; method != nil {
 		cfg.Request.Method = *method
@@ -108,14 +109,13 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:goc
 		fields = append(fields, config.FieldGlobalTimeout)
 	}
 
-	if bodyType := raw.Request.Body.Type; bodyType != nil {
-		cfg.Request.Body.Type = *bodyType
-		fields = append(fields, config.FieldBodyType)
-	}
-
-	if bodyContent := raw.Request.Body.Content; bodyContent != nil {
-		cfg.Request.Body.Content = *bodyContent
-		fields = append(fields, config.FieldBodyContent)
+	// -body format should be "bodyType:bodyContent"
+	// For the moment, only raw bodyType is supported
+	// bodyContent should be in JSON, with {} englobing it and double quotes escaped with backslashes if the user intends it to work
+	// TO DO: add file bodyType with bodyContent being the path to it
+	if bodyConfig := raw.Request.Body; bodyConfig != "" {
+		cfg.Request.Body = strings.SplitN(bodyConfig, ":", 2)[1]
+		fields = append(fields, config.FieldBody)
 	}
 
 	return config.Default().Override(cfg, fields...), nil
