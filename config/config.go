@@ -161,6 +161,23 @@ func Default() Config {
 	return defaultConfig
 }
 
+// -body format should be "bodyType:bodyContent"
+// For the moment, only "raw" bodyType is supported
+// bodyContent should be in JSON, with {} englobing it and double quotes escaped with backslashes if the user intends it to work
+func GetBodyContent(rawBody string) (string, error) {
+	if rawBody != "" {
+		bodyType, bodyContent := strings.SplitN(rawBody, ":", 2)[0], strings.SplitN(rawBody, ":", 2)[1]
+		switch bodyType {
+		case "raw":
+			return bodyContent, nil
+		case "file":
+			// TO DO: add file bodyType with bodyContent being the path to it
+		}
+		return "", errors.New("invalid bodyType. Valid value is \"raw\"")
+	}
+	return "", nil
+}
+
 // helpers
 // Check that a value is present in a string slice
 func contains(s []string, str string) bool {

@@ -2,11 +2,11 @@ package file
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/benchttp/runner/config"
@@ -109,12 +109,12 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:goc
 		fields = append(fields, config.FieldGlobalTimeout)
 	}
 
-	// -body format should be "bodyType:bodyContent"
-	// For the moment, only raw bodyType is supported
-	// bodyContent should be in JSON, with {} englobing it and double quotes escaped with backslashes if the user intends it to work
-	// TO DO: add file bodyType with bodyContent being the path to it
-	if bodyConfig := raw.Request.Body; bodyConfig != "" {
-		cfg.Request.Body = strings.SplitN(bodyConfig, ":", 2)[1]
+	body, err := config.GetBodyContent(raw.Request.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+	if body != "" {
+		cfg.Request.Body = body
 		fields = append(fields, config.FieldBody)
 	}
 
