@@ -100,7 +100,7 @@ func TestParse(t *testing.T) {
 			restoreExpCfg := setTempValue(&expURL.RawQuery, "replaced by test")
 
 			if !reflect.DeepEqual(gotCfg, expCfg) {
-				t.Errorf("unexpected parsed config: exp %v\ngot %v", expCfg, gotCfg)
+				t.Errorf("unexpected parsed config for %s file: exp %v\ngot %v", ext, expCfg, gotCfg)
 			}
 
 			restoreExpCfg()
