@@ -27,7 +27,6 @@ type Runner struct {
 
 // Global represents the global configuration of the runner.
 // It must be validated using Global.Validate before usage.
-// It implements requester.Config
 type Global struct {
 	Request Request
 	Runner  Runner
@@ -145,28 +144,6 @@ func (cfg Global) Validate() error { //nolint:gocognit
 		return &ErrInvalid{inputErrors}
 	}
 	return nil
-}
-
-// requester.Config implementation
-
-func (cfg Global) Requests() int {
-	return cfg.Runner.Requests
-}
-
-func (cfg Global) Concurrency() int {
-	return cfg.Runner.Concurrency
-}
-
-func (cfg Global) Interval() time.Duration {
-	return cfg.Runner.Interval
-}
-
-func (cfg Global) RequestTimeout() time.Duration {
-	return cfg.Runner.RequestTimeout
-}
-
-func (cfg Global) GlobalTimeout() time.Duration {
-	return cfg.Runner.GlobalTimeout
 }
 
 // Default returns a default config that is safe to use.

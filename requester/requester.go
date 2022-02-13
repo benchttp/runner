@@ -15,12 +15,12 @@ const (
 	defaultRecordsCap = 1000
 )
 
-type Config interface {
-	Requests() int
-	Concurrency() int
-	Interval() time.Duration
-	RequestTimeout() time.Duration
-	GlobalTimeout() time.Duration
+type Config struct {
+	Requests       int
+	Concurrency    int
+	Interval       time.Duration
+	RequestTimeout time.Duration
+	GlobalTimeout  time.Duration
 }
 
 // Requester executes the benchmark. It wraps http.Client.
@@ -39,7 +39,7 @@ type Requester struct {
 // it is the caller's responsibility to ensure cfg is valid using
 // cfg.Validate.
 func New(cfg Config) *Requester {
-	recordsCap := cfg.Requests()
+	recordsCap := cfg.Requests
 	if recordsCap < 1 {
 		recordsCap = defaultRecordsCap
 	}
@@ -54,7 +54,7 @@ func New(cfg Config) *Requester {
 			// Timeout includes connection time, any redirects, and reading
 			// the response body.
 			// We may want exclude reading the response body in our benchmark tool.
-			Timeout: cfg.RequestTimeout(),
+			Timeout: cfg.RequestTimeout,
 
 			// tracer keeps track of all events of the current request.
 			Transport: tracer,
@@ -70,10 +70,10 @@ func (r *Requester) Run(req *http.Request) (Report, error) {
 	}
 
 	var (
-		numWorker   = r.config.Concurrency()
-		maxIter     = r.config.Requests()
-		timeout     = r.config.GlobalTimeout()
-		interval    = r.config.Interval()
+		numWorker   = r.config.Concurrency
+		maxIter     = r.config.Requests
+		timeout     = r.config.GlobalTimeout
+		interval    = r.config.Interval
 		ctx, cancel = context.WithTimeout(context.Background(), timeout)
 	)
 
