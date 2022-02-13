@@ -16,9 +16,9 @@ type Request struct {
 	Header http.Header
 }
 
-// HTTP generates a *http.Request based on Request and returns it
+// Value generates a *http.Request based on Request and returns it
 // or any non-nil error that occurred.
-func (r Request) HTTP() (*http.Request, error) {
+func (r Request) Value() (*http.Request, error) {
 	if r.URL == nil {
 		return nil, errors.New("empty url")
 	}
