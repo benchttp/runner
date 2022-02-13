@@ -114,7 +114,7 @@ func (r *Requester) record(req *http.Request, interval time.Duration) func() {
 		if req.Body != nil {
 			bodyClone, err := req.GetBody()
 			if err != nil {
-				r.appendRecord(Record{Error: err})
+				r.appendRecord(Record{Error: ErrRequestBody})
 				return
 			}
 			reqClone.Body = bodyClone
