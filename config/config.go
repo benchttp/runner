@@ -161,19 +161,37 @@ func Default() Config {
 	return defaultConfig
 }
 
-// -body format should be "bodyType:bodyContent"
-// For the moment, only "raw" bodyType is supported
-// bodyContent should be in JSON, with {} englobing it and double quotes escaped with backslashes if the user intends it to work
-func GetBodyContent(rawBody string) (string, error) {
-	if rawBody != "" {
-		bodyType, bodyContent := strings.SplitN(rawBody, ":", 2)[0], strings.SplitN(rawBody, ":", 2)[1]
-		switch bodyType {
-		case "raw":
-			return bodyContent, nil
-		case "file":
-			// TO DO: add file bodyType with bodyContent being the path to it
-		}
-		return "", errors.New("invalid bodyType. Valid value is \"raw\"")
+// ParseBodyContent parses raw and returns the content as a string or an error.
+// raw is in format "type:content", where type may be "raw" or "file".
+//
+// If type is "raw", content is the data as a string.
+//	"raw:{\"key\":\"value\"}" // escaped JSON
+//	"raw:text" // plain text
+// If type is "file", content is the path to the file holding the data.
+//	"file:./path/to/file.txt"
+//
+// Note: only type "raw" is supported at the moment.
+func ParseBodyContent(raw string) (string, error) {
+	if raw == "" {
+		// Body is nil.
+		return "", nil
 	}
-	return "", nil
+
+	split := strings.SplitN(raw, ":", 2)
+	if len(split) != 2 {
+		return "", fmt.Errorf("expected format \"<type>:<content>\", got %s", raw)
+	}
+	if split[1] == "" {
+		return "", errors.New("got type but no content")
+	}
+
+	switch split[0] {
+	case "raw":
+		return split[1], nil
+	case "file":
+		// TODO
+		return "", nil
+	default:
+		return "", fmt.Errorf("unsupported type %s", split[0])
+	}
 }

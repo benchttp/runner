@@ -97,7 +97,7 @@ func parseConfig() (cfg config.Config, err error) {
 		return
 	}
 
-	bodyContent, err := config.GetBodyContent(body)
+	bodyContent, err := config.ParseBodyContent(body)
 	if err != nil {
 		return cfg, nil
 	}

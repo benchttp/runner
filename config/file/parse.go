@@ -2,7 +2,6 @@ package file
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -109,9 +108,9 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:goc
 		fields = append(fields, config.FieldGlobalTimeout)
 	}
 
-	body, err := config.GetBodyContent(raw.Request.Body)
+	body, err := config.ParseBodyContent(raw.Request.Body)
 	if err != nil {
-		fmt.Println(err)
+		return config.Config{}, err
 	}
 	if body != "" {
 		cfg.Request.Body = body
