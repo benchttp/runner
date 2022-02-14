@@ -17,10 +17,7 @@ const (
 	goodURL = "http://a.b"
 )
 
-var (
-	errTest   = errors.New("test-generated error")
-	validBody = `{"key": "value", "key1": "value1"}`
-)
+var errTest = errors.New("test-generated error")
 
 func TestRun(t *testing.T) {
 	testcases := []struct {
@@ -32,9 +29,8 @@ func TestRun(t *testing.T) {
 			label: "return ErrRequest early on request error",
 			req: New(config.Config{
 				Request: config.Request{
-					Method:  "POST",
+					Method:  "GET",
 					Timeout: 0,
-					Body:    validBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      -1,
@@ -48,9 +44,8 @@ func TestRun(t *testing.T) {
 			label: "return ErrConnection early on connection error",
 			req: New(config.Config{
 				Request: config.Request{
-					Method:  "POST",
+					Method:  "GET",
 					Timeout: 1,
-					Body:    validBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      -1,
@@ -64,9 +59,8 @@ func TestRun(t *testing.T) {
 			label: "return dispatcher.ErrInvalidValue early on bad dispatcher value",
 			req: withNoopTransport(New(config.Config{
 				Request: config.Request{
-					Method:  "POST",
+					Method:  "GET",
 					Timeout: time.Second,
-					Body:    validBody,
 				},
 				RunnerOptions: config.RunnerOptions{
 					Requests:      1,
@@ -95,9 +89,8 @@ func TestRun(t *testing.T) {
 	t.Run("record failing requests", func(t *testing.T) {
 		r := withErrTransport(New(config.Config{
 			Request: config.Request{
-				Method:  "POST",
+				Method:  "GET",
 				Timeout: time.Second,
-				Body:    validBody,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,
@@ -131,7 +124,7 @@ func TestRun(t *testing.T) {
 			Request: config.Request{
 				Method:  "POST",
 				Timeout: time.Second,
-				Body:    validBody,
+				Body:    `{"key": "value", "key1": "value1"}`,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,
