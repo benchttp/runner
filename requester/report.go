@@ -67,6 +67,17 @@ func (r *Requester) RunAndSendReport(url string) error {
 		return err
 	}
 
+	fmt.Println(report.Config)
+	fmt.Println(report.Length)
+	fmt.Println("details")
+	for _, rr := range report.Records {
+		fmt.Println(rr.Code)
+		fmt.Println(rr.Error)
+	}
+
+	fmt.Println(report.Success)
+	fmt.Println(report.Fail)
+
 	if err := r.SendReport(url, report); err != nil {
 		return err
 	}
