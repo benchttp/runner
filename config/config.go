@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strings"
 	"time"
 )
@@ -51,10 +50,6 @@ func (cfg Config) HTTPRequest() (*http.Request, error) {
 	rawURL := cfg.Request.URL.String()
 	if _, err := url.ParseRequestURI(rawURL); err != nil {
 		return nil, errors.New("bad url")
-	}
-
-	if reflect.ValueOf(cfg.Request.Body).IsZero() {
-		return http.NewRequest(cfg.Request.Method, rawURL, nil)
 	}
 
 	req, err := http.NewRequest(cfg.Request.Method, rawURL, strings.NewReader(cfg.Request.Body))
