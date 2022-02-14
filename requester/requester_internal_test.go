@@ -124,7 +124,7 @@ func TestRun(t *testing.T) {
 			Request: config.Request{
 				Method:  "POST",
 				Timeout: time.Second,
-				Body:    `{"key": "value", "key1": "value1"}`,
+				Body:    `{"key0": "val0", "key1": "val1"}`,
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      1,

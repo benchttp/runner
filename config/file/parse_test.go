@@ -145,11 +145,7 @@ func newExpConfig() config.Config {
 				"key1": []string{"val0"},
 			},
 			Timeout: 2 * time.Second,
-<<<<<<< HEAD
-			Body:    `{"key": "value", "key1": "value1"}`,
-=======
 			Body:    `{"key0":"val0","key1":"val1"}`,
->>>>>>> 7b3a186... fixup parse test
 		},
 
 		RunnerOptions: config.RunnerOptions{
