@@ -11,7 +11,7 @@ import (
 	"github.com/benchttp/runner/config"
 )
 
-var validBody = `{"key0": "val0", "key1": "val1"}`
+var validBody = config.NewBody("raw", `{"key0": "val0", "key1": "val1"}`)
 
 func TestValidate(t *testing.T) {
 	t.Run("test valid configuration", func(t *testing.T) {
@@ -36,7 +36,7 @@ func TestValidate(t *testing.T) {
 		cfg := config.Config{
 			Request: config.Request{
 				Timeout: -5,
-				Body:    "",
+				Body:    config.Body{},
 			},
 			RunnerOptions: config.RunnerOptions{
 				Requests:      -5,

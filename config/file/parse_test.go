@@ -2,6 +2,7 @@ package file_test
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"path"
@@ -76,6 +77,8 @@ func TestParse(t *testing.T) {
 	t.Run("happy path for all extensions", func(t *testing.T) {
 		for _, ext := range supportedExt {
 			expCfg := newExpConfig()
+			fmt.Println("EXPCONFIG")
+			fmt.Println(expCfg.Request.Body)
 			fname := path.Join(testdataConfigPath, "benchttp"+ext)
 
 			gotCfg, err := file.Parse(fname)
@@ -145,7 +148,7 @@ func newExpConfig() config.Config {
 				"key1": []string{"val0"},
 			},
 			Timeout: 2 * time.Second,
-			Body:    `{"key0":"val0","key1":"val1"}`,
+			Body:    config.NewBody("raw", `{"key0":"val0","key1":"val1"}`),
 		},
 
 		RunnerOptions: config.RunnerOptions{

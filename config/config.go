@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,13 +11,33 @@ import (
 	"time"
 )
 
+type Body struct {
+	Type    string
+	Content []byte
+}
+
+// // To return a Body pbject with Body.Content as a string
+// func (b Body) String() string {
+// 	bodyObject := "\"Body\": "
+// 	bodyType := "\"Type\" :\"" + b.Type + "\""
+// 	bodyContent := "\"Content\": \"" + string(b.Content) + "\""
+// 	return fmt.Sprintf("{%s\r\t%s\r\t%s\r}", bodyObject, bodyType, bodyContent)
+// }
+
+func NewBody(bodyType, bodyContent string) Body {
+	var body Body
+	body.Type = bodyType
+	body.Content = []byte(bodyContent)
+	return body
+}
+
 // Request contains the confing options relative to a single request.
 type Request struct {
 	Method  string
 	URL     *url.URL
 	Header  http.Header
 	Timeout time.Duration
-	Body    string
+	Body    Body
 }
 
 // RunnerOptions contains options relative to the runner.
@@ -52,7 +73,7 @@ func (cfg Config) HTTPRequest() (*http.Request, error) {
 		return nil, errors.New("bad url")
 	}
 
-	req, err := http.NewRequest(cfg.Request.Method, rawURL, strings.NewReader(cfg.Request.Body))
+	req, err := http.NewRequest(cfg.Request.Method, rawURL, bytes.NewReader(cfg.Request.Body.Content))
 	if err != nil {
 		return nil, err
 	}
@@ -166,27 +187,26 @@ func Default() Config {
 //	"file:./path/to/file.txt"
 //
 // Note: only type "raw" is supported at the moment.
-func ParseBodyContent(raw string) (string, error) {
+func ParseBody(raw string) (Body, error) {
 	if raw == "" {
 		// Body is nil.
-		return "", nil
+		return Body{}, nil
 	}
 
 	split := strings.SplitN(raw, ":", 2)
 	if len(split) != 2 {
-		return "", fmt.Errorf("expected format \"<type>:<content>\", got %s", raw)
+		return Body{}, fmt.Errorf("expected format \"<type>:<content>\", got %s", raw)
 	}
 	if split[1] == "" {
-		return "", errors.New("got type but no content")
+		return Body{}, errors.New("got type but no content")
 	}
 
 	switch split[0] {
 	case "raw":
-		return split[1], nil
-	case "file":
-		// TODO
-		return "", nil
+		return NewBody("raw", split[1]), nil
+	// case "file":
+	// 	// TODO
 	default:
-		return "", fmt.Errorf("unsupported type %s", split[0])
+		return Body{}, fmt.Errorf("unsupported type %s", split[0])
 	}
 }

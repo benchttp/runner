@@ -10,7 +10,7 @@ var defaultConfig = Config{
 		Method:  "GET",
 		URL:     &url.URL{},
 		Timeout: 10 * time.Second,
-		Body:    "",
+		Body:    Body{},
 	},
 	RunnerOptions: RunnerOptions{
 		Concurrency:   1,

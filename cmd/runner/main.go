@@ -97,7 +97,7 @@ func parseConfig() (cfg config.Config, err error) {
 		return
 	}
 
-	bodyContent, err := config.ParseBodyContent(body)
+	body, err := config.ParseBody(body)
 	if err != nil {
 		return cfg, nil
 	}
@@ -106,7 +106,7 @@ func parseConfig() (cfg config.Config, err error) {
 		Request: config.Request{
 			Header:  header,
 			Timeout: timeout,
-			Body:    bodyContent,
+			Body:    body,
 		},
 		RunnerOptions: config.RunnerOptions{
 			Requests:      requests,
