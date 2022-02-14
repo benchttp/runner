@@ -29,7 +29,11 @@ var (
 	interval      time.Duration // Minimum duration between two groups of requests
 	globalTimeout time.Duration // Duration of test
 	method        string        // HTTP request method
-	body          string        // HTTP body type (format "bodyType:bodyContent", only possible bodyType value for the moment: "raw")
+	// HTTP body in format "type:content", type may be "raw" or "file".
+	// If type is "raw", content is the data as a string. If type is "file",
+	// content is the path to the file holding the data. Note: only "raw"
+	// is supported at the moment.
+	body string
 )
 
 var defaultConfigFiles = []string{
@@ -59,7 +63,7 @@ func parseArgs() {
 	// request method
 	flag.StringVar(&method, config.FieldMethod, "", "HTTP request method")
 	// body
-	flag.StringVar(&body, config.FieldBody, "", "HTTP body type")
+	flag.StringVar(&body, config.FieldBody, "", "HTTP request body")
 	flag.Parse()
 }
 
