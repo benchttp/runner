@@ -19,7 +19,7 @@ const (
 
 var (
 	errTest   = errors.New("test-generated error")
-	validBody = "{\"key\": \"value\", \"key1\": \"value1\"}"
+	validBody = `{"key": "value", "key1": "value1"}`
 )
 
 func TestRun(t *testing.T) {

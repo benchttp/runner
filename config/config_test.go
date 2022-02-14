@@ -11,7 +11,7 @@ import (
 	"github.com/benchttp/runner/config"
 )
 
-var validBody = "{\"key\": \"value\", \"key1\": \"value1\"}"
+var validBody = `{"key": "value", "key1": "value1"}`
 
 func TestValidate(t *testing.T) {
 	t.Run("test valid configuration", func(t *testing.T) {
