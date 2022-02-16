@@ -2,7 +2,6 @@ package file_test
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"path"
@@ -77,8 +76,6 @@ func TestParse(t *testing.T) {
 	t.Run("happy path for all extensions", func(t *testing.T) {
 		for _, ext := range supportedExt {
 			expCfg := newExpConfig()
-			fmt.Println("EXPCONFIG")
-			fmt.Println(expCfg.Request.Body)
 			fname := path.Join(testdataConfigPath, "benchttp"+ext)
 
 			gotCfg, err := file.Parse(fname)

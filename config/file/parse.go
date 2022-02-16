@@ -2,7 +2,6 @@ package file
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -30,7 +29,6 @@ func Parse(cfgpath string) (cfg config.Config, err error) {
 	if err != nil {
 		return cfg, errWithDetails(ErrFileExt, ext, err)
 	}
-	fmt.Println(ext)
 
 	var rawCfg unmarshaledConfig
 	if err = parser.parse(b, &rawCfg); err != nil {
