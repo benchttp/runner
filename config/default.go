@@ -1,7 +1,6 @@
 package config
 
 import (
-	"net/http"
 	"net/url"
 	"time"
 )
@@ -10,7 +9,7 @@ var defaultConfig = Global{
 	Request: Request{
 		Method: "GET",
 		URL:    &url.URL{},
-		Header: http.Header{},
+		Body:   Body{},
 	},
 	Runner: Runner{
 		Concurrency:    1,

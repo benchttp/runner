@@ -1,19 +1,42 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
+
+type Body struct {
+	Type    string
+	Content []byte
+}
+
+// // To return a Body pbject with Body.Content as a string
+// func (b Body) String() string {
+// 	bodyObject := "\"Body\": "
+// 	bodyType := "\"Type\" :\"" + b.Type + "\""
+// 	bodyContent := "\"Content\": \"" + string(b.Content) + "\""
+// 	return fmt.Sprintf("{%s\r\t%s\r\t%s\r}", bodyObject, bodyType, bodyContent)
+// }
+
+func NewBody(bodyType, bodyContent string) Body {
+	var body Body
+	body.Type = bodyType
+	body.Content = []byte(bodyContent)
+	return body
+}
 
 // Request contains the confing options relative to a single request.
 type Request struct {
 	Method string
 	URL    *url.URL
 	Header http.Header
+	Body   Body
 }
 
 // Value generates a *http.Request based on Request and returns it
@@ -26,8 +49,8 @@ func (r Request) Value() (*http.Request, error) {
 	if _, err := url.ParseRequestURI(rawURL); err != nil {
 		return nil, errors.New("bad url")
 	}
-	// TODO: handle body
-	req, err := http.NewRequest(r.Method, rawURL, nil)
+
+	req, err := http.NewRequest(r.Method, rawURL, bytes.NewReader(r.Body.Content))
 	if err != nil {
 		return nil, err
 	}
@@ -83,6 +106,8 @@ func (cfg Global) Override(c Global, fields ...string) Global {
 			cfg.Request.URL = c.Request.URL
 		case FieldHeader:
 			cfg.overrideHeader(c.Request.Header)
+		case FieldBody:
+			cfg.Request.Body = c.Request.Body
 		case FieldRequests:
 			cfg.Runner.Requests = c.Runner.Requests
 		case FieldConcurrency:
@@ -143,10 +168,45 @@ func (cfg Global) Validate() error { //nolint:gocognit
 	if len(inputErrors) > 0 {
 		return &ErrInvalid{inputErrors}
 	}
+
 	return nil
 }
 
 // Default returns a default config that is safe to use.
 func Default() Global {
 	return defaultConfig
+}
+
+// ParseBodyContent parses raw and returns the content as a string or an error.
+// raw is in format "type:content", where type may be "raw" or "file".
+//
+// If type is "raw", content is the data as a string.
+//	"raw:{\"key\":\"value\"}" // escaped JSON
+//	"raw:text" // plain text
+// If type is "file", content is the path to the file holding the data.
+//	"file:./path/to/file.txt"
+//
+// Note: only type "raw" is supported at the moment.
+func ParseBody(raw string) (Body, error) {
+	if raw == "" {
+		// Body is nil.
+		return Body{}, nil
+	}
+
+	split := strings.SplitN(raw, ":", 2)
+	if len(split) != 2 {
+		return Body{}, fmt.Errorf("expected format \"<type>:<content>\", got %s", raw)
+	}
+	if split[1] == "" {
+		return Body{}, errors.New("got type but no content")
+	}
+
+	switch split[0] {
+	case "raw":
+		return NewBody("raw", split[1]), nil
+	// case "file":
+	// 	// TODO
+	default:
+		return Body{}, fmt.Errorf("unsupported type %s", split[0])
+	}
 }
