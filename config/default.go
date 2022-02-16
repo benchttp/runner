@@ -11,6 +11,7 @@ var defaultConfig = Global{
 		Method: "GET",
 		URL:    &url.URL{},
 		Header: http.Header{},
+		Body:   Body{},
 	},
 	Runner: Runner{
 		Concurrency:    1,

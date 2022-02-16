@@ -1,6 +1,7 @@
 package requester
 
 import (
+	"bytes"
 	"errors"
 	"net/http"
 	"reflect"
@@ -93,7 +94,7 @@ func TestRun(t *testing.T) {
 			GlobalTimeout:  3 * time.Second,
 		}))
 
-		rep, err := r.Run(validRequest())
+		rep, err := r.Run(validRequestWithBody([]byte(`{"key0": "val0", "key1": "val1"}`)))
 		if err != nil {
 			t.Errorf("exp nil error, got %v", err)
 		}
@@ -233,8 +234,14 @@ func (unreadableReadCloser) Close() error {
 	return nil
 }
 
+const validURI = "http://a.b"
+
 func validRequest() *http.Request {
-	const validURI = "http://a.b"
 	request, _ := http.NewRequest("", validURI, nil)
+	return request
+}
+
+func validRequestWithBody(body []byte) *http.Request {
+	request, _ := http.NewRequest("POST", validURI, bytes.NewReader(body))
 	return request
 }

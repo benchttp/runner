@@ -191,6 +191,10 @@ type unmarshaledConfig struct {
 		URL         *string             `yaml:"url" json:"url"`
 		QueryParams map[string]string   `yaml:"queryParams" json:"queryParams"`
 		Header      map[string][]string `yaml:"header" json:"header"`
+		Body        *struct {
+			Type    string `yaml:"type" json:"type"`
+			Content string `yaml:"content" json:"content"`
+		} `yaml:"body" json:"body"`
 	} `yaml:"request" json:"request"`
 
 	Runner struct {

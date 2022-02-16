@@ -11,10 +11,14 @@ import (
 	"github.com/benchttp/runner/config"
 )
 
+var validBody = config.NewBody("raw", `{"key0": "val0", "key1": "val1"}`)
+
 func TestValidate(t *testing.T) {
 	t.Run("test valid configuration", func(t *testing.T) {
 		cfg := config.Global{
-			Request: config.Request{}.WithURL("https://github.com/benchttp/"),
+			Request: config.Request{
+				Body: validBody,
+			}.WithURL("https://github.com/benchttp/"),
 			Runner: config.Runner{
 				Requests:       5,
 				Concurrency:    5,
@@ -30,7 +34,9 @@ func TestValidate(t *testing.T) {
 
 	t.Run("test invalid configuration returns ErrInvalid error with correct messages", func(t *testing.T) {
 		cfg := config.Global{
-			Request: config.Request{}.WithURL("github-com/benchttp"),
+			Request: config.Request{
+				Body: config.Body{},
+			}.WithURL("github-com/benchttp"),
 			Runner: config.Runner{
 				Requests:       -5,
 				Concurrency:    -5,
@@ -86,7 +92,9 @@ func TestOverride(t *testing.T) {
 	t.Run("do not override unspecified fields", func(t *testing.T) {
 		baseCfg := config.Global{}
 		newCfg := config.Global{
-			Request: config.Request{}.WithURL("http://a.b?p=2"),
+			Request: config.Request{
+				Body: config.Body{},
+			}.WithURL("http://a.b?p=2"),
 			Runner: config.Runner{
 				Requests:       1,
 				Concurrency:    2,
@@ -103,7 +111,9 @@ func TestOverride(t *testing.T) {
 	t.Run("override specified fields", func(t *testing.T) {
 		baseCfg := config.Global{}
 		newCfg := config.Global{
-			Request: config.Request{}.WithURL("http://a.b?p=2"),
+			Request: config.Request{
+				Body: validBody,
+			}.WithURL("http://a.b?p=2"),
 			Runner: config.Runner{
 				Requests:       1,
 				Concurrency:    2,
@@ -118,6 +128,7 @@ func TestOverride(t *testing.T) {
 			config.FieldConcurrency,
 			config.FieldRequestTimeout,
 			config.FieldGlobalTimeout,
+			config.FieldBody,
 		}
 
 		if gotCfg := baseCfg.Override(newCfg, fields...); !reflect.DeepEqual(gotCfg, newCfg) {

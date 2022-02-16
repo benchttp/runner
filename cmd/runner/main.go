@@ -20,9 +20,16 @@ const (
 )
 
 var (
-	configFile     string
-	uri            string
-	header         = http.Header{}
+	configFile string
+	uri        string
+	// HTTP request method
+	method string
+	header = http.Header{}
+	// HTTP body in format "type:content", type may be "raw" or "file".
+	// If type is "raw", content is the data as a string. If type is "file",
+	// content is the path to the file holding the data. Note: only "raw"
+	// is supported at the moment.
+	body           string
 	concurrency    int           // Number of connections to run concurrently
 	requests       int           // Number of requests to run, use duration as exit condition if omitted.
 	interval       time.Duration // Minimum duration between two groups of requests
@@ -54,7 +61,10 @@ func parseArgs() {
 	flag.DurationVar(&requestTimeout, config.FieldRequestTimeout, 0, "Timeout for each HTTP request")
 	// global timeout
 	flag.DurationVar(&globalTimeout, config.FieldGlobalTimeout, 0, "Max duration of test")
-
+	// request method
+	flag.StringVar(&method, config.FieldMethod, "", "HTTP request method")
+	// body
+	flag.StringVar(&body, config.FieldBody, "", "HTTP request body")
 	flag.Parse()
 }
 
@@ -99,9 +109,15 @@ func parseConfig() (cfg config.Global, err error) {
 		return
 	}
 
+	body, err := config.ParseBody(body)
+	if err != nil {
+		return cfg, nil
+	}
+
 	cliCfg := config.Global{
 		Request: config.Request{
 			Header: header,
+			Body:   body,
 		}.WithURL(uri),
 		Runner: config.Runner{
 			Requests:       requests,

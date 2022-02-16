@@ -4,6 +4,7 @@ const (
 	FieldMethod         = "method"
 	FieldURL            = "url"
 	FieldHeader         = "header"
+	FieldBody           = "body"
 	FieldRequests       = "requests"
 	FieldConcurrency    = "concurrency"
 	FieldInterval       = "interval"
@@ -13,9 +14,8 @@ const (
 
 func IsField(v string) bool {
 	switch v {
-	case FieldMethod, FieldURL, FieldHeader, FieldRequests,
-		FieldConcurrency, FieldInterval, FieldRequestTimeout,
-		FieldGlobalTimeout:
+	case FieldMethod, FieldURL, FieldHeader, FieldBody, FieldRequests,
+		FieldConcurrency, FieldInterval, FieldRequestTimeout, FieldGlobalTimeout:
 		return true
 	}
 	return false
