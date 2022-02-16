@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 )
 
@@ -175,38 +174,4 @@ func (cfg Global) Validate() error { //nolint:gocognit
 // Default returns a default config that is safe to use.
 func Default() Global {
 	return defaultConfig
-}
-
-// ParseBodyContent parses raw and returns the content as a string or an error.
-// raw is in format "type:content", where type may be "raw" or "file".
-//
-// If type is "raw", content is the data as a string.
-//	"raw:{\"key\":\"value\"}" // escaped JSON
-//	"raw:text" // plain text
-// If type is "file", content is the path to the file holding the data.
-//	"file:./path/to/file.txt"
-//
-// Note: only type "raw" is supported at the moment.
-func ParseBody(raw string) (Body, error) {
-	if raw == "" {
-		// Body is nil.
-		return Body{}, nil
-	}
-
-	split := strings.SplitN(raw, ":", 2)
-	if len(split) != 2 {
-		return Body{}, fmt.Errorf("expected format \"<type>:<content>\", got %s", raw)
-	}
-	if split[1] == "" {
-		return Body{}, errors.New("got type but no content")
-	}
-
-	switch split[0] {
-	case "raw":
-		return NewBody("raw", split[1]), nil
-	// case "file":
-	// 	// TODO
-	default:
-		return Body{}, fmt.Errorf("unsupported type %s", split[0])
-	}
 }
