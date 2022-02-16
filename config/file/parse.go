@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"reflect"
 	"time"
 
 	"github.com/benchttp/runner/config"
@@ -110,7 +109,7 @@ func parseRawConfig(raw unmarshaledConfig) (config.Config, error) { //nolint:goc
 	}
 
 	body := config.Body{Type: raw.Request.Body.Type, Content: []byte(raw.Request.Body.Content)}
-	if !reflect.DeepEqual(body, config.NewBody("", "")) {
+	if body.Type != "" && len(body.Content) > 0 {
 		cfg.Request.Body = body
 		fields = append(fields, config.FieldBody)
 	}
