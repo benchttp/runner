@@ -150,9 +150,7 @@ func (r *Requester) appendRecord(rec Record) {
 	}
 }
 
-// helpers
-
-// Request.Clone() method from net/http packacke does not clone the body, so it is added after with .GetBody()
+// cloneRequest fully clones a http.Request by also cloning the body via Request.GetBody
 func cloneRequest(req *http.Request) (*http.Request, error) {
 	reqClone := req.Clone(req.Context())
 	if req.Body != nil {
