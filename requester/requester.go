@@ -31,9 +31,8 @@ type Requester struct {
 	start   time.Time
 	done    bool
 
-	config Config
-	client http.Client
-	tracer *tracer
+	config       Config
+	newTransport func() http.RoundTripper
 
 	mu sync.RWMutex
 }
@@ -47,20 +46,11 @@ func New(cfg Config) *Requester {
 		recordsCap = defaultRecordsCap
 	}
 
-	tracer := newTracer()
-
 	return &Requester{
 		records: make([]Record, 0, recordsCap),
 		config:  cfg,
-		tracer:  tracer,
-		client: http.Client{
-			// Timeout includes connection time, any redirects, and reading
-			// the response body.
-			// We may want exclude reading the response body in our benchmark tool.
-			Timeout: cfg.RequestTimeout,
-
-			// tracer keeps track of all events of the current request.
-			Transport: tracer,
+		newTransport: func() http.RoundTripper {
+			return newTracer()
 		},
 	}
 }
@@ -96,7 +86,7 @@ func (r *Requester) Run(req *http.Request) (Report, error) {
 }
 
 func (r *Requester) ping(req *http.Request) error {
-	resp, err := r.client.Do(req)
+	resp, err := newClient(r.newTransport(), r.config.RequestTimeout).Do(req)
 	if resp != nil {
 		resp.Body.Close()
 	}
@@ -117,13 +107,14 @@ type Record struct {
 
 func (r *Requester) record(req *http.Request, interval time.Duration) func() {
 	return func() {
+		client := newClient(r.newTransport(), r.config.RequestTimeout)
 		// It is necessary to clone the request because one request
 		// with a non-nil body cannot be used in concurrent threads.
-		req = cloneRequest(req)
+		newReq := cloneRequest(req)
 
 		sent := time.Now()
 
-		resp, err := r.client.Do(req)
+		resp, err := client.Do(newReq)
 		if err != nil {
 			r.appendRecord(Record{Error: err})
 			return
@@ -142,10 +133,10 @@ func (r *Requester) record(req *http.Request, interval time.Duration) func() {
 			Code:   resp.StatusCode,
 			Time:   duration,
 			Bytes:  len(body),
-			Events: r.tracer.events,
+			Events: toTracer(client.Transport).events,
 		})
 
-		fmt.Print(r.state())
+		r.printState()
 		time.Sleep(interval)
 	}
 }
@@ -184,6 +175,14 @@ func (r *Requester) printState() {
 	fmt.Print(r.state())
 }
 
+// newClient returns a new http.Client with the given transport and timeout.
+func newClient(transport http.RoundTripper, timeout time.Duration) *http.Client {
+	return &http.Client{
+		Timeout:   timeout,
+		Transport: transport,
+	}
+}
+
 // cloneRequest fully clones a *http.Request by also cloning the body
 // via Request.GetBody.
 func cloneRequest(req *http.Request) *http.Request {
@@ -193,4 +192,13 @@ func cloneRequest(req *http.Request) *http.Request {
 		reqClone.Body, _ = req.GetBody()
 	}
 	return reqClone
+}
+
+// newClient returns a new http.Client with the given transport and timeout.
+func toTracer(transport http.RoundTripper) *tracer {
+	reqtracer, ok := transport.(*tracer)
+	if !ok || reqtracer == nil {
+		return &tracer{}
+	}
+	return reqtracer
 }
