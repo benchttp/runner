@@ -86,10 +86,12 @@ func (r *Requester) Run(req *http.Request) (Report, error) {
 }
 
 func (r *Requester) ping(req *http.Request) error {
-	resp, err := newClient(r.newTransport(), r.config.RequestTimeout).Do(req)
+	client := newClient(r.newTransport(), r.config.RequestTimeout)
+	resp, err := client.Do(req)
 	if resp != nil {
 		resp.Body.Close()
 	}
+	client.CloseIdleConnections()
 	return err
 }
 
