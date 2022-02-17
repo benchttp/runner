@@ -22,8 +22,8 @@ type tracer struct {
 }
 
 // RoundTrip implements http.RoundTripper. It attaches the client trace
-// to the request context and calls http.DefaultTransport.RoundTrip
-// with the new created request.
+// to the request context and calls t.transport.RoundTrip with a client
+// trace attached to the request context.
 func (t *tracer) RoundTrip(r *http.Request) (*http.Response, error) {
 	ctx := httptrace.WithClientTrace(r.Context(), t.trace())
 	return t.transport.RoundTrip(r.WithContext(ctx))
@@ -47,25 +47,12 @@ func (t *tracer) trace() *httptrace.ClientTrace {
 	return &httptrace.ClientTrace{
 		GetConn: func(string) {
 			t.start = time.Now()
-			t.addEvent("GetConn")
-		},
-		DNSStart: func(httptrace.DNSStartInfo) {
-			t.addEvent("DNSStart")
 		},
 		DNSDone: func(httptrace.DNSDoneInfo) {
 			t.addEvent("DNSDone")
 		},
-		ConnectStart: func(string, string) {
-			t.addEvent("ConnectStart")
-		},
 		ConnectDone: func(string, string, error) {
 			t.addEvent("ConnectDone")
-		},
-		GotConn: func(httptrace.GotConnInfo) {
-			t.addEvent("GotConn")
-		},
-		TLSHandshakeStart: func() {
-			t.addEvent("TLSHandshakeStart")
 		},
 		TLSHandshakeDone: func(tls.ConnectionState, error) {
 			t.addEvent("TLSHandshakeDone")
@@ -86,16 +73,15 @@ func (t *tracer) trace() *httptrace.ClientTrace {
 	}
 }
 
-// addEvent timestamps and appends and event to the tracer's events slice.
+// addEvent appends a timestamped Event to the tracer's events slice.
 func (t *tracer) addEvent(name string) {
 	t.events = append(t.events, Event{Name: name, Time: time.Since(t.start)})
 }
 
 // newTracer returns an initialized tracer.
 func newTracer() *tracer {
-	p := &tracer{
+	return &tracer{
 		events:    make([]Event, 0, 20),
 		transport: http.DefaultTransport,
 	}
-	return p
 }
