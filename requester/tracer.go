@@ -78,6 +78,11 @@ func (t *tracer) addEvent(name string) {
 	t.events = append(t.events, Event{Name: name, Time: time.Since(t.start)})
 }
 
+// addEventBodyRead adds event BodyRead to the tracer's events slice.
+func (t *tracer) addEventBodyRead() {
+	t.addEvent("BodyRead")
+}
+
 // newTracer returns an initialized tracer.
 func newTracer() *tracer {
 	return &tracer{

@@ -109,21 +109,22 @@ type Record struct {
 
 func (r *Requester) record(req *http.Request, interval time.Duration) func() {
 	return func() {
+		// We need new client and request instances each call to record
+		// to make it safe for concurrent use.
 		client := newClient(r.newTransport(), r.config.RequestTimeout)
-		// It is necessary to clone the request because one request
-		// with a non-nil body cannot be used in concurrent threads.
 		newReq := cloneRequest(req)
 
 		sent := time.Now()
 
+		// Send request
 		resp, err := client.Do(newReq)
 		if err != nil {
 			r.appendRecord(Record{Error: err})
 			return
 		}
 
-		body, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
+		// Read and close response body
+		body, err := readClose(resp)
 		if err != nil {
 			r.appendRecord(Record{Error: err})
 			return
@@ -131,11 +132,18 @@ func (r *Requester) record(req *http.Request, interval time.Duration) func() {
 
 		duration := time.Since(sent)
 
+		// Retrieve tracer events and append BodyRead event
+		events := []Event{}
+		if reqtracer, ok := client.Transport.(*tracer); ok {
+			reqtracer.addEventBodyRead()
+			events = reqtracer.events
+		}
+
 		r.appendRecord(Record{
 			Code:   resp.StatusCode,
 			Time:   duration,
 			Bytes:  len(body),
-			Events: toTracer(client.Transport).events,
+			Events: events,
 		})
 
 		r.printState()
@@ -196,11 +204,8 @@ func cloneRequest(req *http.Request) *http.Request {
 	return reqClone
 }
 
-// newClient returns a new http.Client with the given transport and timeout.
-func toTracer(transport http.RoundTripper) *tracer {
-	reqtracer, ok := transport.(*tracer)
-	if !ok || reqtracer == nil {
-		return &tracer{}
-	}
-	return reqtracer
+// readClose reads r and closes it.
+func readClose(resp *http.Response) ([]byte, error) {
+	defer resp.Body.Close()
+	return io.ReadAll(resp.Body)
 }
