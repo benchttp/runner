@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/benchttp/runner/ansi"
@@ -102,9 +103,13 @@ var _ export.Interface = (*Output)(nil)
 
 // String returns a default summary of an Output as a string.
 func (o Output) String() string {
+	if o.Metadata.Config.Output.Template != "" {
+		return o.applyTemplate()
+	}
+
 	line := func(name string, value interface{}) string {
-		const pattern = "%-18s %v\n"
-		return fmt.Sprintf(pattern, name, value)
+		const template = "%-18s %v\n"
+		return fmt.Sprintf(template, name, value)
 	}
 
 	msString := func(d time.Duration) string {
@@ -134,6 +139,18 @@ func (o Output) String() string {
 	b.WriteString(line("Max response time", msString(max)))
 	b.WriteString(line("Mean response time", msString(mean)))
 	b.WriteString(line("Test duration", msString(rep.Duration)))
+	return b.String()
+}
+
+func (o Output) applyTemplate() string {
+	t, err := template.New("template").Parse(o.Metadata.Config.Output.Template)
+	if err != nil {
+		return err.Error()
+	}
+	var b strings.Builder
+	if err := t.Execute(&b, o); err != nil {
+		return err.Error()
+	}
 	return b.String()
 }
 
