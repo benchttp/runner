@@ -108,7 +108,7 @@ type Record struct {
 
 func (r *Requester) record(req *http.Request, interval time.Duration) func() {
 	return func() {
-		// We need new client and request instances each call to record
+		// We need new client and request instances each call to this function
 		// to make it safe for concurrent use.
 		client := newClient(r.newTransport(), r.config.RequestTimeout)
 		newReq := cloneRequest(req)

@@ -91,6 +91,8 @@ func newTracer() *tracer {
 	}
 }
 
+// eventsTotalTime returns the time of the last event, or 0
+// if events is empty.
 func eventsTotalTime(events []Event) time.Duration {
 	if len(events) == 0 {
 		return 0
