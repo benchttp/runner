@@ -117,16 +117,13 @@ type Record struct {
 
 func (r *Requester) record(req *http.Request, interval time.Duration) func() {
 	return func() {
-		// It is necessary to clone the request because one request with a non-nil body cannot be used in concurrent threads
-		reqClone, err := cloneRequest(req)
-		if err != nil {
-			r.appendRecord(Record{Error: ErrRequestBody})
-			return
-		}
+		// It is necessary to clone the request because one request
+		// with a non-nil body cannot be used in concurrent threads.
+		req = cloneRequest(req)
 
 		sent := time.Now()
 
-		resp, err := r.client.Do(reqClone)
+		resp, err := r.client.Do(req)
 		if err != nil {
 			r.appendRecord(Record{Error: err})
 			return
@@ -187,15 +184,13 @@ func (r *Requester) printState() {
 	fmt.Print(r.state())
 }
 
-// cloneRequest fully clones a http.Request by also cloning the body via Request.GetBody
-func cloneRequest(req *http.Request) (*http.Request, error) {
+// cloneRequest fully clones a *http.Request by also cloning the body
+// via Request.GetBody.
+func cloneRequest(req *http.Request) *http.Request {
 	reqClone := req.Clone(req.Context())
 	if req.Body != nil {
-		bodyClone, err := req.GetBody()
-		if err != nil {
-			return nil, ErrRequestBody
-		}
-		reqClone.Body = bodyClone
+		// err is always nil (https://golang.org/src/net/http/request.go#L889)
+		reqClone.Body, _ = req.GetBody()
 	}
-	return reqClone, nil
+	return reqClone
 }
