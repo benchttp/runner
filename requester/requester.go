@@ -113,8 +113,6 @@ func (r *Requester) record(req *http.Request, interval time.Duration) func() {
 		client := newClient(r.newTransport(), r.config.RequestTimeout)
 		newReq := cloneRequest(req)
 
-		sent := time.Now()
-
 		// Send request
 		resp, err := client.Do(newReq)
 		if err != nil {
@@ -129,8 +127,6 @@ func (r *Requester) record(req *http.Request, interval time.Duration) func() {
 			return
 		}
 
-		duration := time.Since(sent)
-
 		// Retrieve tracer events and append BodyRead event
 		events := []Event{}
 		if reqtracer, ok := client.Transport.(*tracer); ok {
@@ -140,7 +136,7 @@ func (r *Requester) record(req *http.Request, interval time.Duration) func() {
 
 		r.appendRecord(Record{
 			Code:   resp.StatusCode,
-			Time:   duration,
+			Time:   eventsTotalTime(events),
 			Bytes:  len(body),
 			Events: events,
 		})

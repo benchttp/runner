@@ -90,3 +90,10 @@ func newTracer() *tracer {
 		transport: http.DefaultTransport,
 	}
 }
+
+func eventsTotalTime(events []Event) time.Duration {
+	if len(events) == 0 {
+		return 0
+	}
+	return events[len(events)-1].Time
+}
