@@ -14,9 +14,6 @@ import (
 	"github.com/benchttp/runner/requester"
 )
 
-// TODO: build tags
-const benchttpServerEndpoint = "http://localhost:9998/report"
-
 // Output represent a benchmark result as exported by the runner.
 type Output struct {
 	Report   requester.Report
@@ -122,7 +119,7 @@ func (o Output) HTTPRequest() (*http.Request, error) {
 	}
 
 	// Create request
-	r, err := http.NewRequest("POST", benchttpServerEndpoint, bytes.NewReader(b))
+	r, err := http.NewRequest("POST", benchttpEndpoint, bytes.NewReader(b))
 	if err != nil {
 		return nil, err
 	}
