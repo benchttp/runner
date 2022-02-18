@@ -11,12 +11,8 @@ import (
 
 	"github.com/benchttp/runner/config"
 	configfile "github.com/benchttp/runner/config/file"
+	"github.com/benchttp/runner/output"
 	"github.com/benchttp/runner/requester"
-)
-
-const (
-	// API server endpoint. May live is some config file later.
-	reportURL = "http://localhost:9998/report"
 )
 
 var (
@@ -86,14 +82,10 @@ func run() error {
 	parseArgs()
 	fmt.Println()
 
-	fmt.Println(out)
-
 	cfg, err := parseConfig()
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(cfg)
 
 	req, err := cfg.Request.Value()
 	if err != nil {
@@ -105,12 +97,7 @@ func run() error {
 		return err
 	}
 
-	// TODO: handle output
-	if err := requester.SendReport(reportURL, rep); err != nil {
-		return err
-	}
-
-	return nil
+	return output.New(rep, cfg).Export()
 }
 
 // parseConfig returns a config.Config initialized with config file
