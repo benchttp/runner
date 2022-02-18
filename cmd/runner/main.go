@@ -83,7 +83,6 @@ func main() {
 
 func run() error {
 	parseArgs()
-	fmt.Println()
 
 	cfg, err := parseConfig()
 	if err != nil {
@@ -95,7 +94,7 @@ func run() error {
 		return err
 	}
 
-	rep, err := requester.New(requester.Config(cfg.Runner)).Run(req)
+	rep, err := requester.New(requesterConfig(cfg)).Run(req)
 	if err != nil {
 		return err
 	}
@@ -144,6 +143,18 @@ func configFlags() []string {
 		}
 	})
 	return fields
+}
+
+// requesterConfig returns a requester.Config generated from cfg.
+func requesterConfig(cfg config.Global) requester.Config {
+	return requester.Config{
+		Requests:       cfg.Runner.Requests,
+		Concurrency:    cfg.Runner.Concurrency,
+		Interval:       cfg.Runner.Interval,
+		RequestTimeout: cfg.Runner.RequestTimeout,
+		GlobalTimeout:  cfg.Runner.GlobalTimeout,
+		Silent:         cfg.Output.Silent,
+	}
 }
 
 // headerValue implements flag.Value
