@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -22,10 +25,13 @@ type Output struct {
 		Config     config.Global
 		FinishedAt time.Time
 	}
+
+	log func(v ...interface{})
 }
 
 // New returns an Output initialized with rep and cfg.
 func New(rep requester.Report, cfg config.Global) *Output {
+	outputLogger := newLogger(cfg.Output.Silent)
 	return &Output{
 		Report: rep,
 		Metadata: struct {
@@ -35,7 +41,20 @@ func New(rep requester.Report, cfg config.Global) *Output {
 			Config:     cfg,
 			FinishedAt: time.Now(),
 		},
+
+		log: func(v ...interface{}) {
+			outputLogger.Println(ansi.Bold(fmt.Sprint(v...)))
+		},
 	}
+}
+
+// newLogger returns the logger to be used by Output.
+func newLogger(silent bool) *log.Logger {
+	var writer io.Writer = os.Stdout
+	if silent {
+		writer = nopWriter{}
+	}
+	return log.New(writer, ansi.Bold("→ "), 0)
 }
 
 // Export exports an Output using the Strategies set in the attached
@@ -47,7 +66,7 @@ func (o Output) Export() error {
 
 	s := exportStrategy(o.Metadata.Config.Output.Out)
 	if s.is(Stdout) {
-		fmt.Println(ansi.Bold("→ Summary"))
+		o.log("Summary")
 		export.Stdout(o)
 		ok = true
 	}
@@ -56,16 +75,17 @@ func (o Output) Export() error {
 		if err := export.JSONFile(filename, o); err != nil {
 			errs = append(errs, err)
 		} else {
-			fmt.Println(ansi.Bold("→ JSON generated"))
-			fmt.Println(filename)
+			o.log("JSON generated")
+			fmt.Println(filename) // always print output filename
 		}
 		ok = true
 	}
 	if s.is(Benchttp) {
 		if err := export.HTTP(o); err != nil {
 			errs = append(errs, err)
+		} else {
+			fmt.Println(ansi.Bold("→ Data sent to Benchttp"))
 		}
-		fmt.Println(ansi.Bold("→ Data sent to Benchttp"))
 		ok = true
 	}
 
@@ -164,3 +184,7 @@ func timestamp() string {
 		" ", "0",
 	)
 }
+
+type nopWriter struct{}
+
+func (nopWriter) Write(b []byte) (int, error) { return 0, nil }
