@@ -15,7 +15,7 @@ type Report struct {
 	Fail    int      `json:"fail"`
 }
 
-// String returns an indented json representation of the report.
+// String returns an indented JSON representation of the report.
 func (rep Report) String() string {
 	b, _ := json.MarshalIndent(rep, "", "  ")
 	return string(b)

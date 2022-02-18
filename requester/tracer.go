@@ -32,8 +32,9 @@ func (t *tracer) RoundTrip(r *http.Request) (*http.Response, error) {
 // CloseIdleConnections closes any connections on its http.Transport
 // which are sitting idle in a "keep-alive" state.
 //
-// If the tracer's Transport does not have a CloseIdleConnections method
-// then this method does nothing.
+// It provides access to the Tracer private Transport's CloseIdleConnections
+// method. If the Tracer's Transport does not have a CloseIdleConnections
+// method then this method does nothing.
 func (t *tracer) CloseIdleConnections() {
 	type closeIdler interface{ CloseIdleConnections() }
 	if tr, ok := t.transport.(closeIdler); ok {
