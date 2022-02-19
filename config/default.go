@@ -14,7 +14,7 @@ var defaultConfig = Global{
 		Body:   Body{},
 	},
 	Runner: Runner{
-		Concurrency:    1,
+		Concurrency:    10,
 		Requests:       100,
 		Interval:       0 * time.Second,
 		RequestTimeout: 5 * time.Second,
