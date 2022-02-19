@@ -48,43 +48,48 @@ type unmarshaledConfig struct {
 // and returns it or the first non-nil error occurring in the process,
 // which can be any of the values declared in the package.
 func Parse(cfgpath string) (cfg config.Global, err error) {
-	uconfs, err := parseFileRecursive(cfgpath, []unmarshaledConfig{})
+	uconfs, err := parseFileRecursive(cfgpath, []unmarshaledConfig{}, map[string]bool{})
 	if err != nil {
 		return cfg, err
 	}
 	return parseAndMergeConfigs(uconfs)
 }
 
-// recursionLimit is the maximum recursion depth allowed for reading
-// extended config files.
-const recursionLimit = 10
-
 // parseFileRecursive parses a config file and its parent found from key
 // "extends" recursively until the root config file is reached.
 // It returns the list of all parsed configs or the first non-nil error
 // occurring in the process.
-func parseFileRecursive(cfgpath string, uconfs []unmarshaledConfig) ([]unmarshaledConfig, error) {
+func parseFileRecursive(
+	cfgpath string,
+	uconfs []unmarshaledConfig,
+	seen map[string]bool,
+) ([]unmarshaledConfig, error) {
+	// parse current config file
 	uconf, err := parseFile(cfgpath)
 	if err != nil {
-		return nil, err
+		return uconfs, err
 	}
 
-	uconfs = append(uconfs, uconf)
-
-	// root config reached, return the result
+	// root config reached, append it and return the result
 	if uconf.Extends == nil {
+		uconfs = append(uconfs, uconf)
 		return uconfs, nil
 	}
 
-	// avoid circular references
-	if len(uconfs) == recursionLimit {
-		return uconfs, ErrExtendLimit
+	// avoid infinite recursion caused by circular reference
+	if _, exists := seen[*uconf.Extends]; exists {
+		return uconfs, ErrCircularExtends
 	}
+
+	// record file, append config
+	seen[*uconf.Extends] = true
+	uconfs = append(uconfs, uconf)
 
 	// resolve extended config path
 	parentPath := path.Join(path.Dir(cfgpath), *uconf.Extends)
 
-	return parseFileRecursive(parentPath, uconfs)
+	// parse parent config file
+	return parseFileRecursive(parentPath, uconfs, seen)
 }
 
 // parseFile parses a single config file and returns the result as an

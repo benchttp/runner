@@ -55,12 +55,12 @@ func TestParse(t *testing.T) {
 			{
 				label:  "self reference",
 				path:   configPath("extends-circular-self.yml"),
-				expErr: file.ErrExtendLimit,
+				expErr: file.ErrCircularExtends,
 			},
 			{
 				label:  "circular reference",
 				path:   configPath("extends-circular-0.yml"),
-				expErr: file.ErrExtendLimit,
+				expErr: file.ErrCircularExtends,
 			},
 		}
 
