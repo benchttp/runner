@@ -26,3 +26,8 @@ var defaultConfig = Global{
 		Template: "",
 	},
 }
+
+// Default returns a default config that is safe to use.
+func Default() Global {
+	return defaultConfig
+}
