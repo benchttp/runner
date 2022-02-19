@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -92,15 +93,24 @@ func (o Output) String() string {
 		return fmt.Sprintf("%dms", d.Milliseconds())
 	}
 
+	formatRequests := func(n, max int) string {
+		maxString := strconv.Itoa(max)
+		if maxString == "-1" {
+			maxString = "∞"
+		}
+		return fmt.Sprintf("%d/%s", n, maxString)
+	}
+
 	var (
-		b              strings.Builder
+		b strings.Builder
+
 		cfg            = o.Metadata.Config
 		rep            = o.Report
 		min, max, mean = rep.Stats()
 	)
 
 	b.WriteString(line("Endpoint", cfg.Request.URL))
-	b.WriteString(line("Requests", fmt.Sprintf("%d/%d", rep.Length, cfg.Runner.Requests)))
+	b.WriteString(line("Requests", formatRequests(rep.Length, cfg.Runner.Requests)))
 	b.WriteString(line("Errors", rep.Fail))
 	b.WriteString(line("Min response time", msString(min)))
 	b.WriteString(line("Max response time", msString(max)))
