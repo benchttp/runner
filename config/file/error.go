@@ -22,6 +22,9 @@ var (
 	// It is returned if it contains an unexpected field or an unexpected
 	// value for a field.
 	ErrParse = errors.New("parsing error: invalid config file")
+
+	// ErrExtendLimit signals a max depth reached reading extended config files.
+	ErrExtendLimit = errors.New("extend limit reached (10), possible circular reference")
 )
 
 // errWithDetails returns an error wrapping err, appended with a string

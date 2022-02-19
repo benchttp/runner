@@ -16,6 +16,8 @@ import (
 // its types are kept simple (certain types are incompatible with certain
 // unmarshalers).
 type unmarshaledConfig struct {
+	Extends *string `yaml:"extends" json:"extends"`
+
 	Request struct {
 		Method      *string             `yaml:"method" json:"method"`
 		URL         *string             `yaml:"url" json:"url"`
@@ -42,41 +44,111 @@ type unmarshaledConfig struct {
 	} `yaml:"output" json:"output"`
 }
 
-// Parse parses a benchttp runner config file into a config.Config
-// and returns it or the first non-nil error occurring in the process.
+// Parse parses a benchttp runner config file into a config.Global
+// and returns it or the first non-nil error occurring in the process,
+// which can be any of the values declared in the package.
 func Parse(cfgpath string) (cfg config.Global, err error) {
+	rawCfgs, err := parseFileRecursive(cfgpath, []unmarshaledConfig{})
+	if err != nil {
+		return cfg, err
+	}
+	return parseAndMergeConfigs(rawCfgs)
+}
+
+// recursionLimit is the maximum recursion depth allowed for reading
+// extended config files.
+const recursionLimit = 10
+
+// parseFileRecursive parses a config file and its parent found from key
+// "extends" recursively until the root config file is reached.
+// It returns the list of all parsed configs or the first non-nil error
+// occurring in the process.
+func parseFileRecursive(cfgpath string, rawCfgs []unmarshaledConfig) ([]unmarshaledConfig, error) {
+	rawCfg, err := parseFile(cfgpath)
+	if err != nil {
+		return nil, err
+	}
+
+	rawCfgs = append(rawCfgs, rawCfg)
+
+	// root config reached, return the result
+	if rawCfg.Extends == nil {
+		return rawCfgs, nil
+	}
+
+	// avoid circular references
+	if len(rawCfgs) == recursionLimit {
+		return rawCfgs, ErrExtendLimit
+	}
+
+	// resolve extended config path
+	parentPath := path.Join(path.Dir(cfgpath), *rawCfg.Extends)
+
+	return parseFileRecursive(parentPath, rawCfgs)
+}
+
+// parseFile parses a single config file and returns the result as an
+// unmarshaledConfig and an appropriate error predeclared in the package.
+func parseFile(cfgpath string) (rawCfg unmarshaledConfig, err error) {
 	b, err := os.ReadFile(cfgpath)
 	switch {
 	case err == nil:
 	case errors.Is(err, os.ErrNotExist):
-		return cfg, errWithDetails(ErrFileNotFound, cfgpath)
+		return rawCfg, errWithDetails(ErrFileNotFound, cfgpath)
 	default:
-		return cfg, errWithDetails(ErrFileRead, cfgpath, err)
+		return rawCfg, errWithDetails(ErrFileRead, cfgpath, err)
 	}
 
 	ext := extension(path.Ext(cfgpath))
 	parser, err := newParser(ext)
 	if err != nil {
-		return cfg, errWithDetails(ErrFileExt, ext, err)
+		return rawCfg, errWithDetails(ErrFileExt, ext, err)
 	}
 
-	var rawCfg unmarshaledConfig
 	if err = parser.parse(b, &rawCfg); err != nil {
-		return cfg, errWithDetails(ErrParse, cfgpath, err)
+		return rawCfg, errWithDetails(ErrParse, cfgpath, err)
 	}
 
-	cfg, err = parseRawConfig(rawCfg)
-	if err != nil {
-		return cfg, errWithDetails(ErrParse, cfgpath, err)
-	}
-
-	return
+	return rawCfg, nil
 }
 
-// parseRawConfig parses an input raw config as a config.Config and returns it
-// or the first non-nil error occurring in the process.
-func parseRawConfig(raw unmarshaledConfig) (config.Global, error) { //nolint:gocognit // acceptable complexity for a parsing func
-	const numField = 10 // should match the number of config Fields (not critical)
+// parsedConfig holds a parsed config.Global and the lsit of its set fields.
+type parsedConfig struct {
+	value  config.Global
+	fields []string
+}
+
+// parseAndMergesConfigs iterates backwards over raws, parsing them
+// as config.Global and merging them into a single one.
+// It returns the merged result or the first non-nil error occurring in the
+// process.
+func parseAndMergeConfigs(raws []unmarshaledConfig) (cfg config.Global, err error) {
+	if len(raws) == 0 { // supposedly catched upstream, should not occur
+		return cfg, errors.New(
+			"an unacceptable error occurred parsing the config file, " +
+				"please visit https://github.com/benchttp/runner/issues/new " +
+				"and insult us properly",
+		)
+	}
+
+	cfg = config.Default()
+
+	for i := len(raws) - 1; i >= 0; i-- {
+		rawCfg := raws[i]
+		parsedCfg, err := parseRawConfig(rawCfg)
+		if err != nil {
+			return cfg, errWithDetails(ErrParse, "", err)
+		}
+		cfg = cfg.Override(parsedCfg.value, parsedCfg.fields...)
+	}
+
+	return cfg, nil
+}
+
+// parseRawConfig parses an input raw config as a config.Global and returns
+// a parsedConfig or the first non-nil error occurring in the process.
+func parseRawConfig(raw unmarshaledConfig) (parsedConfig, error) { //nolint:gocognit // acceptable complexity for a parsing func
+	const numField = 12 // should match the number of config Fields (not critical)
 
 	cfg := config.Global{}
 	fields := make([]string, 0, numField)
@@ -93,7 +165,7 @@ func parseRawConfig(raw unmarshaledConfig) (config.Global, error) { //nolint:goc
 	if rawURL := raw.Request.URL; rawURL != nil {
 		parsedURL, err := parseAndBuildURL(*raw.Request.URL, raw.Request.QueryParams)
 		if err != nil {
-			return config.Global{}, err
+			return parsedConfig{}, err
 		}
 		cfg.Request.URL = parsedURL
 		appendField(config.FieldURL)
@@ -129,7 +201,7 @@ func parseRawConfig(raw unmarshaledConfig) (config.Global, error) { //nolint:goc
 	if interval := raw.Runner.Interval; interval != nil {
 		parsedInterval, err := parseOptionalDuration(*interval)
 		if err != nil {
-			return config.Global{}, err
+			return parsedConfig{}, err
 		}
 		cfg.Runner.Interval = parsedInterval
 		appendField(config.FieldInterval)
@@ -138,7 +210,7 @@ func parseRawConfig(raw unmarshaledConfig) (config.Global, error) { //nolint:goc
 	if requestTimeout := raw.Runner.RequestTimeout; requestTimeout != nil {
 		parsedTimeout, err := parseOptionalDuration(*requestTimeout)
 		if err != nil {
-			return config.Global{}, err
+			return parsedConfig{}, err
 		}
 		cfg.Runner.RequestTimeout = parsedTimeout
 		appendField(config.FieldRequestTimeout)
@@ -147,7 +219,7 @@ func parseRawConfig(raw unmarshaledConfig) (config.Global, error) { //nolint:goc
 	if globalTimeout := raw.Runner.GlobalTimeout; globalTimeout != nil {
 		parsedGlobalTimeout, err := parseOptionalDuration(*globalTimeout)
 		if err != nil {
-			return config.Global{}, err
+			return parsedConfig{}, err
 		}
 		cfg.Runner.GlobalTimeout = parsedGlobalTimeout
 		appendField(config.FieldGlobalTimeout)
@@ -170,7 +242,10 @@ func parseRawConfig(raw unmarshaledConfig) (config.Global, error) { //nolint:goc
 		appendField(config.FieldTemplate)
 	}
 
-	return config.Default().Override(cfg, fields...), nil
+	return parsedConfig{
+		value:  cfg,
+		fields: fields,
+	}, nil
 }
 
 // parseAndBuildURL parses a raw string as a *url.URL and adds any extra
