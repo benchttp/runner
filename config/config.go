@@ -180,11 +180,13 @@ func (cfg Global) Validate() error { //nolint:gocognit
 	}
 
 	if out := cfg.Output.Out; len(out) == 0 {
-		appendError(errors.New(`-out: missing (want "benchttp"/"json"/"stdin")`))
+		appendError(errors.New(`-out: missing (want one or many of "benchttp", "json", "stdin")`))
 	} else {
 		for _, o := range out {
 			if !IsOutput(string(o)) {
-				appendError(fmt.Errorf(`-out: invalid value: %s (want "benchttp"/"json"/"stdin")`, o))
+				appendError(fmt.Errorf(
+					`-out: invalid value: %s (want one or many of "benchttp", "json", "stdin")`, o),
+				)
 			}
 		}
 	}

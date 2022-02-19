@@ -39,8 +39,8 @@ func (rep Report) Stats() (min, max, mean time.Duration) {
 	return min, max, sum / time.Duration(rep.Length)
 }
 
-// makeReport generates and returns a Report from a previous Run.
-func makeReport(records []Record, numErr int, d time.Duration) Report {
+// newReport generates and returns a Report given a Run dataset.
+func newReport(records []Record, numErr int, d time.Duration) Report {
 	return Report{
 		Records:  records,
 		Length:   len(records),
