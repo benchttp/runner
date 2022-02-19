@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	testdataConfigPath = "../../test/testdata/config"
+	testdataConfigPath = "./testdata"
 	testURL            = "http://localhost:9999?fib=30&delay=200ms"
 )
 
