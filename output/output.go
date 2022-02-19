@@ -42,9 +42,7 @@ func New(rep requester.Report, cfg config.Global) *Output {
 			FinishedAt: time.Now(),
 		},
 
-		log: func(v ...interface{}) {
-			outputLogger.Println(ansi.Bold(fmt.Sprint(v...)))
-		},
+		log: outputLogger.Println,
 	}
 }
 
@@ -66,7 +64,7 @@ func (o Output) Export() error {
 
 	s := exportStrategy(o.Metadata.Config.Output.Out)
 	if s.is(Stdout) {
-		o.log("Summary")
+		o.log(ansi.Bold("Summary"))
 		export.Stdout(o)
 		ok = true
 	}
@@ -75,7 +73,7 @@ func (o Output) Export() error {
 		if err := export.JSONFile(filename, o); err != nil {
 			errs = append(errs, err)
 		} else {
-			o.log("JSON generated")
+			o.log(ansi.Bold("JSON generated"))
 			fmt.Println(filename) // always print output filename
 		}
 		ok = true
@@ -84,7 +82,7 @@ func (o Output) Export() error {
 		if err := export.HTTP(o); err != nil {
 			errs = append(errs, err)
 		} else {
-			fmt.Println(ansi.Bold("→ Data sent to Benchttp"))
+			o.log(ansi.Bold("Report sent to Benchttp"))
 		}
 		ok = true
 	}
