@@ -52,6 +52,16 @@ func TestParse(t *testing.T) {
 				path:   configPath("badfields.json"),
 				expErr: file.ErrParse,
 			},
+			{
+				label:  "self reference",
+				path:   configPath("extends-circular-self.yml"),
+				expErr: file.ErrExtendLimit,
+			},
+			{
+				label:  "circular reference",
+				path:   configPath("extends-circular-0.yml"),
+				expErr: file.ErrExtendLimit,
+			},
 		}
 
 		for _, tc := range testcases {
@@ -127,6 +137,26 @@ func TestParse(t *testing.T) {
 		}
 
 		t.Log(cfg)
+	})
+
+	t.Run("extend config files", func(t *testing.T) {
+		cfg, err := file.Parse(configPath("extends-valid-child.yml"))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		const (
+			expMethod = "POST"
+			expURL    = "http://child.config"
+		)
+
+		if gotMethod := cfg.Request.Method; gotMethod != expMethod {
+			t.Errorf("method: exp %s, got %s", expMethod, gotMethod)
+		}
+
+		if gotURL := cfg.Request.URL.String(); gotURL != expURL {
+			t.Errorf("method: exp %s, got %s", expURL, gotURL)
+		}
 	})
 }
 
