@@ -47,10 +47,10 @@ type unmarshaledConfig struct {
 // Parse parses a benchttp runner config file into a config.Global
 // and returns it or the first non-nil error occurring in the process,
 // which can be any of the values declared in the package.
-func Parse(cfgpath string) (cfg config.Global, err error) {
-	uconfs, err := parseFileRecursive(cfgpath, []unmarshaledConfig{}, map[string]bool{})
+func Parse(filename string) (cfg config.Global, err error) {
+	uconfs, err := parseFileRecursive(filename, []unmarshaledConfig{}, map[string]bool{})
 	if err != nil {
-		return cfg, err
+		return
 	}
 	return parseAndMergeConfigs(uconfs)
 }
@@ -60,67 +60,58 @@ func Parse(cfgpath string) (cfg config.Global, err error) {
 // It returns the list of all parsed configs or the first non-nil error
 // occurring in the process.
 func parseFileRecursive(
-	cfgpath string,
+	filename string,
 	uconfs []unmarshaledConfig,
 	seen map[string]bool,
 ) ([]unmarshaledConfig, error) {
-	// parse current config file
-	uconf, err := parseFile(cfgpath)
-	if err != nil {
-		return uconfs, err
-	}
-
-	// root config reached, append it and return the result
-	if uconf.Extends == nil {
-		uconfs = append(uconfs, uconf)
-		return uconfs, nil
-	}
-
 	// avoid infinite recursion caused by circular reference
-	if _, exists := seen[*uconf.Extends]; exists {
+	if _, exists := seen[filename]; exists {
 		return uconfs, ErrCircularExtends
 	}
 
-	// record file, append config
-	seen[*uconf.Extends] = true
+	// mark current file for next circular reference checks
+	seen[filename] = true
+
+	// parse current file, append parsed config
+	uconf, err := parseFile(filename)
+	if err != nil {
+		return uconfs, err
+	}
 	uconfs = append(uconfs, uconf)
 
-	// resolve extended config path
-	parentPath := filepath.Join(filepath.Dir(cfgpath), *uconf.Extends)
+	// root config reached: stop now and return the parsed configs
+	if uconf.Extends == nil {
+		return uconfs, nil
+	}
 
-	// parse parent config file
+	// config has parent: resolve its path and parse it recursively
+	parentPath := filepath.Join(filepath.Dir(filename), *uconf.Extends)
 	return parseFileRecursive(parentPath, uconfs, seen)
 }
 
 // parseFile parses a single config file and returns the result as an
 // unmarshaledConfig and an appropriate error predeclared in the package.
-func parseFile(cfgpath string) (uconf unmarshaledConfig, err error) {
-	b, err := os.ReadFile(cfgpath)
+func parseFile(filename string) (uconf unmarshaledConfig, err error) {
+	b, err := os.ReadFile(filename)
 	switch {
 	case err == nil:
 	case errors.Is(err, os.ErrNotExist):
-		return uconf, errWithDetails(ErrFileNotFound, cfgpath)
+		return uconf, errWithDetails(ErrFileNotFound, filename)
 	default:
-		return uconf, errWithDetails(ErrFileRead, cfgpath, err)
+		return uconf, errWithDetails(ErrFileRead, filename, err)
 	}
 
-	ext := extension(filepath.Ext(cfgpath))
+	ext := extension(filepath.Ext(filename))
 	parser, err := newParser(ext)
 	if err != nil {
 		return uconf, errWithDetails(ErrFileExt, ext, err)
 	}
 
 	if err = parser.parse(b, &uconf); err != nil {
-		return uconf, errWithDetails(ErrParse, cfgpath, err)
+		return uconf, errWithDetails(ErrParse, filename, err)
 	}
 
 	return uconf, nil
-}
-
-// parsedConfig holds a parsed config.Global and the list of its set fields.
-type parsedConfig struct {
-	value  config.Global
-	fields []string
 }
 
 // parseAndMergeConfigs iterates backwards over uconfs, parsing them
@@ -139,32 +130,40 @@ func parseAndMergeConfigs(uconfs []unmarshaledConfig) (cfg config.Global, err er
 	cfg = config.Default()
 
 	for i := len(uconfs) - 1; i >= 0; i-- {
-		rawCfg := uconfs[i]
-		parsedCfg, err := parseRawConfig(rawCfg)
+		uconf := uconfs[i]
+		pconf, err := newParsedConfig(uconf)
 		if err != nil {
-			return cfg, errWithDetails(ErrParse, "", err)
+			return cfg, errWithDetails(ErrParse, err)
 		}
-		cfg = cfg.Override(parsedCfg.value, parsedCfg.fields...)
+		cfg = cfg.Override(pconf.Global, pconf.fields...)
 	}
 
 	return cfg, nil
 }
 
-// parseRawConfig parses an input raw config as a config.Global and returns
+// parsedConfig embeds a parsed config.Global and the list of its set fields.
+type parsedConfig struct {
+	config.Global
+	fields []string
+}
+
+// addField adds a field to the list of set fields.
+func (pconf *parsedConfig) add(field string) {
+	pconf.fields = append(pconf.fields, field)
+}
+
+// newParsedConfig parses an input raw config as a config.Global and returns
 // a parsedConfig or the first non-nil error occurring in the process.
-func parseRawConfig(uconf unmarshaledConfig) (parsedConfig, error) { //nolint:gocognit // acceptable complexity for a parsing func
+func newParsedConfig(uconf unmarshaledConfig) (parsedConfig, error) { //nolint:gocognit // acceptable complexity for a parsing func
 	const numField = 12 // should match the number of config Fields (not critical)
 
-	cfg := config.Global{}
-	fields := make([]string, 0, numField)
-
-	appendField := func(field string) {
-		fields = append(fields, field)
+	pconf := parsedConfig{
+		fields: make([]string, 0, numField),
 	}
 
 	if method := uconf.Request.Method; method != nil {
-		cfg.Request.Method = *method
-		appendField(config.FieldMethod)
+		pconf.Request.Method = *method
+		pconf.add(config.FieldMethod)
 	}
 
 	if rawURL := uconf.Request.URL; rawURL != nil {
@@ -172,8 +171,8 @@ func parseRawConfig(uconf unmarshaledConfig) (parsedConfig, error) { //nolint:go
 		if err != nil {
 			return parsedConfig{}, err
 		}
-		cfg.Request.URL = parsedURL
-		appendField(config.FieldURL)
+		pconf.Request.URL = parsedURL
+		pconf.add(config.FieldURL)
 	}
 
 	if header := uconf.Request.Header; header != nil {
@@ -181,26 +180,26 @@ func parseRawConfig(uconf unmarshaledConfig) (parsedConfig, error) { //nolint:go
 		for key, val := range header {
 			httpHeader[key] = val
 		}
-		cfg.Request.Header = httpHeader
-		appendField(config.FieldHeader)
+		pconf.Request.Header = httpHeader
+		pconf.add(config.FieldHeader)
 	}
 
 	if body := uconf.Request.Body; body != nil {
-		cfg.Request.Body = config.Body{
+		pconf.Request.Body = config.Body{
 			Type:    body.Type,
 			Content: []byte(body.Content),
 		}
-		fields = append(fields, config.FieldBody)
+		pconf.add(config.FieldBody)
 	}
 
 	if requests := uconf.Runner.Requests; requests != nil {
-		cfg.Runner.Requests = *requests
-		appendField(config.FieldRequests)
+		pconf.Runner.Requests = *requests
+		pconf.add(config.FieldRequests)
 	}
 
 	if concurrency := uconf.Runner.Concurrency; concurrency != nil {
-		cfg.Runner.Concurrency = *concurrency
-		appendField(config.FieldConcurrency)
+		pconf.Runner.Concurrency = *concurrency
+		pconf.add(config.FieldConcurrency)
 	}
 
 	if interval := uconf.Runner.Interval; interval != nil {
@@ -208,8 +207,8 @@ func parseRawConfig(uconf unmarshaledConfig) (parsedConfig, error) { //nolint:go
 		if err != nil {
 			return parsedConfig{}, err
 		}
-		cfg.Runner.Interval = parsedInterval
-		appendField(config.FieldInterval)
+		pconf.Runner.Interval = parsedInterval
+		pconf.add(config.FieldInterval)
 	}
 
 	if requestTimeout := uconf.Runner.RequestTimeout; requestTimeout != nil {
@@ -217,8 +216,8 @@ func parseRawConfig(uconf unmarshaledConfig) (parsedConfig, error) { //nolint:go
 		if err != nil {
 			return parsedConfig{}, err
 		}
-		cfg.Runner.RequestTimeout = parsedTimeout
-		appendField(config.FieldRequestTimeout)
+		pconf.Runner.RequestTimeout = parsedTimeout
+		pconf.add(config.FieldRequestTimeout)
 	}
 
 	if globalTimeout := uconf.Runner.GlobalTimeout; globalTimeout != nil {
@@ -226,32 +225,31 @@ func parseRawConfig(uconf unmarshaledConfig) (parsedConfig, error) { //nolint:go
 		if err != nil {
 			return parsedConfig{}, err
 		}
-		cfg.Runner.GlobalTimeout = parsedGlobalTimeout
-		appendField(config.FieldGlobalTimeout)
+		pconf.Runner.GlobalTimeout = parsedGlobalTimeout
+		pconf.add(config.FieldGlobalTimeout)
 	}
 
 	if out := uconf.Output.Out; out != nil {
 		for _, o := range *out {
-			cfg.Output.Out = append(cfg.Output.Out, config.OutputStrategy(o))
+			pconf.Output.Out = append(pconf.Output.Out, config.OutputStrategy(o))
 		}
-		appendField(config.FieldOut)
+		pconf.add(config.FieldOut)
 	}
 
 	if silent := uconf.Output.Silent; silent != nil {
-		cfg.Output.Silent = *silent
-		appendField(config.FieldSilent)
+		pconf.Output.Silent = *silent
+		pconf.add(config.FieldSilent)
 	}
 
 	if template := uconf.Output.Template; template != nil {
-		cfg.Output.Template = *template
-		appendField(config.FieldTemplate)
+		pconf.Output.Template = *template
+		pconf.add(config.FieldTemplate)
 	}
 
-	return parsedConfig{
-		value:  cfg,
-		fields: fields,
-	}, nil
+	return pconf, nil
 }
+
+// helpers
 
 // parseAndBuildURL parses a raw string as a *url.URL and adds any extra
 // query parameters. It returns the first non-nil error occurring in the
