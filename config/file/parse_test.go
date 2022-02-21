@@ -2,6 +2,7 @@ package file_test
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"path"
@@ -140,22 +141,43 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("extend config files", func(t *testing.T) {
-		cfg, err := file.Parse(configPath("extends-valid-child.yml"))
-		if err != nil {
-			t.Fatal(err)
+		testcases := []struct {
+			label  string
+			cfname string
+			cfpath string
+		}{
+			{
+				label:  "same directory",
+				cfname: "child",
+				cfpath: "./extends-valid-child.yml",
+			},
+			{
+				label:  "nested directory",
+				cfname: "nested",
+				cfpath: "./nest-0/nest-1/extends-valid-nested.yml",
+			},
 		}
 
-		const (
-			expMethod = "POST"
-			expURL    = "http://child.config"
-		)
+		for _, tc := range testcases {
+			t.Run(tc.label, func(t *testing.T) {
+				cfg, err := file.Parse(configPath(tc.cfpath))
+				if err != nil {
+					t.Fatal(err)
+				}
 
-		if gotMethod := cfg.Request.Method; gotMethod != expMethod {
-			t.Errorf("method: exp %s, got %s", expMethod, gotMethod)
-		}
+				var (
+					expMethod = "POST"
+					expURL    = fmt.Sprintf("http://%s.config", tc.cfname)
+				)
 
-		if gotURL := cfg.Request.URL.String(); gotURL != expURL {
-			t.Errorf("method: exp %s, got %s", expURL, gotURL)
+				if gotMethod := cfg.Request.Method; gotMethod != expMethod {
+					t.Errorf("method: exp %s, got %s", expMethod, gotMethod)
+				}
+
+				if gotURL := cfg.Request.URL.String(); gotURL != expURL {
+					t.Errorf("method: exp %s, got %s", expURL, gotURL)
+				}
+			})
 		}
 	})
 }
