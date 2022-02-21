@@ -48,11 +48,24 @@ type unmarshaledConfig struct {
 // and returns it or the first non-nil error occurring in the process,
 // which can be any of the values declared in the package.
 func Parse(filename string) (cfg config.Global, err error) {
-	uconfs, err := parseFileRecursive(filename, []unmarshaledConfig{}, map[string]bool{})
+	uconfs, err := parseFileRecursive(filename, []unmarshaledConfig{}, set{})
 	if err != nil {
 		return
 	}
 	return parseAndMergeConfigs(uconfs)
+}
+
+// set is a collection of unique string values.
+type set map[string]bool
+
+// add adds v to the receiver. If v is already set, it returns a non-nil
+// error instead.
+func (s set) add(v string) error {
+	if _, exists := s[v]; exists {
+		return errors.New("value already set")
+	}
+	s[v] = true
+	return nil
 }
 
 // parseFileRecursive parses a config file and its parent found from key
@@ -62,15 +75,12 @@ func Parse(filename string) (cfg config.Global, err error) {
 func parseFileRecursive(
 	filename string,
 	uconfs []unmarshaledConfig,
-	seen map[string]bool,
+	seen set,
 ) ([]unmarshaledConfig, error) {
 	// avoid infinite recursion caused by circular reference
-	if _, exists := seen[filename]; exists {
+	if err := seen.add(filename); err != nil {
 		return uconfs, ErrCircularExtends
 	}
-
-	// mark current file for next circular reference checks
-	seen[filename] = true
 
 	// parse current file, append parsed config
 	uconf, err := parseFile(filename)
