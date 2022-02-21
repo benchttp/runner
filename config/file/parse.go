@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/benchttp/runner/config"
@@ -86,7 +86,7 @@ func parseFileRecursive(
 	uconfs = append(uconfs, uconf)
 
 	// resolve extended config path
-	parentPath := path.Join(path.Dir(cfgpath), *uconf.Extends)
+	parentPath := filepath.Join(filepath.Dir(cfgpath), *uconf.Extends)
 
 	// parse parent config file
 	return parseFileRecursive(parentPath, uconfs, seen)
@@ -104,7 +104,7 @@ func parseFile(cfgpath string) (uconf unmarshaledConfig, err error) {
 		return uconf, errWithDetails(ErrFileRead, cfgpath, err)
 	}
 
-	ext := extension(path.Ext(cfgpath))
+	ext := extension(filepath.Ext(cfgpath))
 	parser, err := newParser(ext)
 	if err != nil {
 		return uconf, errWithDetails(ErrFileExt, ext, err)
