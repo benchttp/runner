@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	goodFileYML  = "./testdata/benchttp.yml"
-	goodFileJSON = "./testdata/benchttp.json"
-	badFile      = "./hello.yml"
+	goodFileYML  = configPath("valid/benchttp.yml")
+	goodFileJSON = configPath("valid/benchttp.json")
+	badFile      = configPath("does-not-exist.json")
 )
 
 func TestFind(t *testing.T) {
