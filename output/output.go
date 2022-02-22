@@ -20,8 +20,8 @@ import (
 	"github.com/benchttp/runner/requester"
 )
 
-// Output represent a benchmark result as exported by the runner.
-type Output struct {
+// Benchmark represent a benchmark result as exported by the runner.
+type Benchmark struct {
 	Report   requester.Report
 	Metadata struct {
 		Config     config.Global
@@ -32,9 +32,9 @@ type Output struct {
 }
 
 // New returns an Output initialized with rep and cfg.
-func New(rep requester.Report, cfg config.Global) *Output {
+func New(rep requester.Report, cfg config.Global) *Benchmark {
 	outputLogger := newLogger(cfg.Output.Silent)
-	return &Output{
+	return &Benchmark{
 		Report: rep,
 		Metadata: struct {
 			Config     config.Global
@@ -60,7 +60,7 @@ func newLogger(silent bool) *log.Logger {
 // Export exports an Output using the Strategies set in the attached
 // config.Global. If any error occurs for a given Strategy, it does not
 // block the other exports and returns an ExportError listing the errors.
-func (o Output) Export() error {
+func (o Benchmark) Export() error {
 	var ok bool
 	var errs []error
 
@@ -100,10 +100,10 @@ func (o Output) Export() error {
 
 // export.Interface implementation
 
-var _ export.Interface = (*Output)(nil)
+var _ export.Interface = (*Benchmark)(nil)
 
 // String returns a default summary of an Output as a string.
-func (o Output) String() string {
+func (o Benchmark) String() string {
 	var b strings.Builder
 
 	if s, err := o.applyTemplate(o.Metadata.Config.Output.Template); err == nil {
@@ -154,7 +154,7 @@ func (o Output) String() string {
 // the result as a string. If pattern == "", it returns errTemplateEmpty.
 // If an error occurs parsing the pattern or executing the template,
 // it returns errTemplateSyntax.
-func (o Output) applyTemplate(pattern string) (string, error) {
+func (o Benchmark) applyTemplate(pattern string) (string, error) {
 	if pattern == "" {
 		return "", errTemplateEmpty
 	}
@@ -174,7 +174,7 @@ func (o Output) applyTemplate(pattern string) (string, error) {
 
 // HTTPRequest returns the *http.Request to be sent to Benchttp server.
 // The output is encoded as gob in the request body.
-func (o Output) HTTPRequest() (*http.Request, error) {
+func (o Benchmark) HTTPRequest() (*http.Request, error) {
 	// Encode request body as gob
 	b, err := encodeGob(o)
 	if err != nil {
@@ -193,7 +193,7 @@ func (o Output) HTTPRequest() (*http.Request, error) {
 // helpers
 
 // encodeGob encodes the given Output as gob-encoded bytes.
-func encodeGob(o Output) ([]byte, error) {
+func encodeGob(o Benchmark) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(o); err != nil {
 		return nil, err
