@@ -20,10 +20,10 @@ import (
 	"github.com/benchttp/runner/requester"
 )
 
-// Benchmark represent a benchmark result as exported by the runner.
-type Benchmark struct {
-	Report   requester.Report
-	Metadata struct {
+// Report represent a benchmark result as exported by the runner.
+type Report struct {
+	Benchmark requester.Benchmark
+	Metadata  struct {
 		Config     config.Global
 		FinishedAt time.Time
 	}
@@ -31,11 +31,11 @@ type Benchmark struct {
 	log func(v ...interface{})
 }
 
-// New returns an Benchmark initialized with rep and cfg.
-func New(rep requester.Report, cfg config.Global) *Benchmark {
+// New returns a Report initialized with bk and cfg.
+func New(bk requester.Benchmark, cfg config.Global) *Report {
 	outputLogger := newLogger(cfg.Output.Silent)
-	return &Benchmark{
-		Report: rep,
+	return &Report{
+		Benchmark: bk,
 		Metadata: struct {
 			Config     config.Global
 			FinishedAt time.Time
@@ -48,7 +48,7 @@ func New(rep requester.Report, cfg config.Global) *Benchmark {
 	}
 }
 
-// newLogger returns the logger to be used by Benchmark.
+// newLogger returns the logger to be used by Report.
 func newLogger(silent bool) *log.Logger {
 	var w io.Writer = os.Stdout
 	if silent {
@@ -57,34 +57,34 @@ func newLogger(silent bool) *log.Logger {
 	return log.New(w, ansi.Bold("→ "), 0)
 }
 
-// Export exports a Benchmark using the Strategies set in the attached
+// Export exports the Report using the Strategies set in the embedded
 // config.Global. If any error occurs for a given Strategy, it does not
 // block the other exports and returns an ExportError listing the errors.
-func (bk Benchmark) Export() error {
+func (rep Report) Export() error {
 	var ok bool
 	var errs []error
 
-	s := exportStrategy(bk.Metadata.Config.Output.Out)
+	s := exportStrategy(rep.Metadata.Config.Output.Out)
 	if s.is(Stdout) {
-		bk.log(ansi.Bold("Summary"))
-		export.Stdout(bk)
+		rep.log(ansi.Bold("Summary"))
+		export.Stdout(rep)
 		ok = true
 	}
 	if s.is(JSONFile) {
 		filename := genFilename()
-		if err := export.JSONFile(filename, bk); err != nil {
+		if err := export.JSONFile(filename, rep); err != nil {
 			errs = append(errs, err)
 		} else {
-			bk.log(ansi.Bold("JSON generated"))
+			rep.log(ansi.Bold("JSON generated"))
 			fmt.Println(filename) // always print output filename
 		}
 		ok = true
 	}
 	if s.is(Benchttp) {
-		if err := export.HTTP(bk); err != nil {
+		if err := export.HTTP(rep); err != nil {
 			errs = append(errs, err)
 		} else {
-			bk.log(ansi.Bold("Report sent to Benchttp"))
+			rep.log(ansi.Bold("Report sent to Benchttp"))
 		}
 		ok = true
 	}
@@ -100,13 +100,13 @@ func (bk Benchmark) Export() error {
 
 // export.Interface implementation
 
-var _ export.Interface = (*Benchmark)(nil)
+var _ export.Interface = (*Report)(nil)
 
-// String returns a default summary of a Benchmark as a string.
-func (bk Benchmark) String() string {
+// String returns a default summary of the Report as a string.
+func (rep Report) String() string {
 	var b strings.Builder
 
-	if s, err := bk.applyTemplate(bk.Metadata.Config.Output.Template); err == nil {
+	if s, err := rep.applyTemplate(rep.Metadata.Config.Output.Template); err == nil {
 		// template is non-empty and correctly executed,
 		// returns its result instead of default summary.
 		return s
@@ -135,37 +135,37 @@ func (bk Benchmark) String() string {
 	}
 
 	var (
-		cfg            = bk.Metadata.Config
-		rep            = bk.Report
-		min, max, mean = rep.Stats()
+		bk             = rep.Benchmark
+		cfg            = rep.Metadata.Config
+		min, max, mean = bk.Stats()
 	)
 
 	b.WriteString(line("Endpoint", cfg.Request.URL))
-	b.WriteString(line("Requests", formatRequests(rep.Length, cfg.Runner.Requests)))
-	b.WriteString(line("Errors", rep.Fail))
+	b.WriteString(line("Requests", formatRequests(bk.Length, cfg.Runner.Requests)))
+	b.WriteString(line("Errors", bk.Fail))
 	b.WriteString(line("Min response time", msString(min)))
 	b.WriteString(line("Max response time", msString(max)))
 	b.WriteString(line("Mean response time", msString(mean)))
-	b.WriteString(line("Test duration", msString(rep.Duration)))
+	b.WriteString(line("Test duration", msString(bk.Duration)))
 	return b.String()
 }
 
-// applyTemplate applies Benchmark to a template using given pattern and returns
+// applyTemplate applies Report to a template using given pattern and returns
 // the result as a string. If pattern == "", it returns errTemplateEmpty.
 // If an error occurs parsing the pattern or executing the template,
 // it returns errTemplateSyntax.
-func (bk Benchmark) applyTemplate(pattern string) (string, error) {
+func (rep Report) applyTemplate(pattern string) (string, error) {
 	if pattern == "" {
 		return "", errTemplateEmpty
 	}
 
-	t, err := template.New("template").Parse(bk.Metadata.Config.Output.Template)
+	t, err := template.New("template").Parse(rep.Metadata.Config.Output.Template)
 	if err != nil {
 		return "", fmt.Errorf("%w: %s", errTemplateSyntax, err)
 	}
 
 	var b strings.Builder
-	if err := t.Execute(&b, bk); err != nil {
+	if err := t.Execute(&b, rep); err != nil {
 		return "", fmt.Errorf("%w: %s", errTemplateSyntax, err)
 	}
 
@@ -173,10 +173,10 @@ func (bk Benchmark) applyTemplate(pattern string) (string, error) {
 }
 
 // HTTPRequest returns the *http.Request to be sent to Benchttp server.
-// The Benchmark is encoded as gob in the request body.
-func (bk Benchmark) HTTPRequest() (*http.Request, error) {
+// The Report is encoded as gob in the request body.
+func (rep Report) HTTPRequest() (*http.Request, error) {
 	// Encode request body as gob
-	b, err := encodeGob(bk)
+	b, err := encodeGob(rep)
 	if err != nil {
 		return nil, err
 	}
@@ -192,10 +192,10 @@ func (bk Benchmark) HTTPRequest() (*http.Request, error) {
 
 // helpers
 
-// encodeGob encodes the given Benchmark as gob-encoded bytes.
-func encodeGob(bk Benchmark) ([]byte, error) {
+// encodeGob encodes the given Report as gob-encoded bytes.
+func encodeGob(rep Report) ([]byte, error) {
 	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(bk); err != nil {
+	if err := gob.NewEncoder(&buf).Encode(rep); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
