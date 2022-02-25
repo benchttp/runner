@@ -106,16 +106,20 @@ var _ export.Interface = (*Report)(nil)
 func (rep Report) String() string {
 	var b strings.Builder
 
-	if s, err := rep.applyTemplate(rep.Metadata.Config.Output.Template); err == nil {
+	s, err := rep.applyTemplate(rep.Metadata.Config.Output.Template)
+	switch {
+	case err == nil:
 		// template is non-empty and correctly executed,
-		// returns its result instead of default summary.
+		// return its result instead of default summary.
 		return s
-	} else if errors.Is(err, errTemplateSyntax) {
+	case errors.Is(err, errTemplateSyntax):
 		// template is non-empty but has syntax errors,
 		// inform the user about it and fallback to default summary.
 		b.WriteString(err.Error())
 		b.WriteString("\nFalling back to default summary:\n")
-	} // template is empty, use default summary.
+	case errors.Is(err, errTemplateEmpty):
+		// template is empty, use default summary.
+	}
 
 	line := func(name string, value interface{}) string {
 		const template = "%-18s %v\n"
@@ -159,7 +163,7 @@ func (rep Report) applyTemplate(pattern string) (string, error) {
 		return "", errTemplateEmpty
 	}
 
-	t, err := template.New("template").Parse(rep.Metadata.Config.Output.Template)
+	t, err := template.New("report").Parse(rep.Metadata.Config.Output.Template)
 	if err != nil {
 		return "", fmt.Errorf("%w: %s", errTemplateSyntax, err)
 	}
