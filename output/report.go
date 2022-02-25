@@ -150,7 +150,7 @@ func (rep Report) String() string {
 	b.WriteString(line("Min response time", msString(min)))
 	b.WriteString(line("Max response time", msString(max)))
 	b.WriteString(line("Mean response time", msString(mean)))
-	b.WriteString(line("Test duration", msString(bk.Duration)))
+	b.WriteString(line("Total duration", msString(bk.Duration)))
 	return b.String()
 }
 
