@@ -27,7 +27,7 @@ func Set(flagset *flag.FlagSet, cfg *config.Global) {
 	// request method
 	flagset.StringVar(&cfg.Request.Method,
 		config.FieldMethod,
-		"",
+		cfg.Request.Method,
 		config.FieldsDesc[config.FieldMethod],
 	)
 	// request header
@@ -43,32 +43,32 @@ func Set(flagset *flag.FlagSet, cfg *config.Global) {
 	// requests number
 	flagset.IntVar(&cfg.Runner.Requests,
 		config.FieldRequests,
-		0,
+		cfg.Runner.Requests,
 		config.FieldsDesc[config.FieldRequests],
 	)
 
 	// concurrency
 	flagset.IntVar(&cfg.Runner.Concurrency,
 		config.FieldConcurrency,
-		0,
+		cfg.Runner.Concurrency,
 		config.FieldsDesc[config.FieldConcurrency],
 	)
 	// non-conurrent requests interval
 	flagset.DurationVar(&cfg.Runner.Interval,
 		config.FieldInterval,
-		0,
+		cfg.Runner.Interval,
 		config.FieldsDesc[config.FieldInterval],
 	)
 	// request timeout
 	flagset.DurationVar(&cfg.Runner.RequestTimeout,
 		config.FieldRequestTimeout,
-		0,
+		cfg.Runner.RequestTimeout,
 		config.FieldsDesc[config.FieldRequestTimeout],
 	)
 	// global timeout
 	flagset.DurationVar(&cfg.Runner.GlobalTimeout,
 		config.FieldGlobalTimeout,
-		0,
+		cfg.Runner.GlobalTimeout,
 		config.FieldsDesc[config.FieldGlobalTimeout],
 	)
 
@@ -80,13 +80,13 @@ func Set(flagset *flag.FlagSet, cfg *config.Global) {
 	// silent mode
 	flagset.BoolVar(&cfg.Output.Silent,
 		config.FieldSilent,
-		false,
+		cfg.Output.Silent,
 		config.FieldsDesc[config.FieldSilent],
 	)
 	// output template
 	flagset.StringVar(&cfg.Output.Template,
 		config.FieldTemplate,
-		"",
+		cfg.Output.Template,
 		config.FieldsDesc[config.FieldTemplate],
 	)
 }
