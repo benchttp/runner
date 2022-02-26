@@ -3,6 +3,7 @@ package output_test
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,7 +23,7 @@ func TestReport_String(t *testing.T) {
 	t.Run("return default summary if template is empty", func(t *testing.T) {
 		const tpl = ""
 
-		rep := output.New(newBenchmark(), newConfigWithTemplate(tpl))
+		rep := output.New(newBenchmark(), newConfigWithOutput(tpl))
 		checkSummary(t, rep.String())
 	})
 
@@ -30,7 +31,7 @@ func TestReport_String(t *testing.T) {
 		const tpl = "{{ .Benchmark.Length }}"
 
 		bk := newBenchmark()
-		rep := output.New(bk, newConfigWithTemplate(tpl))
+		rep := output.New(bk, newConfigWithOutput(tpl))
 
 		if got, exp := rep.String(), strconv.Itoa(bk.Length); got != exp {
 			t.Errorf("\nunexpected output\nexp %s\ngot %s", exp, got)
@@ -40,7 +41,7 @@ func TestReport_String(t *testing.T) {
 	t.Run("fallback to default summary if template is invalid", func(t *testing.T) {
 		const tpl = "{{ .Marcel.Patulacci }}"
 
-		rep := output.New(newBenchmark(), newConfigWithTemplate(tpl))
+		rep := output.New(newBenchmark(), newConfigWithOutput(tpl))
 		got := rep.String()
 		split := strings.Split(got, "Falling back to default summary:\n")
 
@@ -59,7 +60,7 @@ func TestReport_String(t *testing.T) {
 
 func TestReport_HTTPRequest(t *testing.T) {
 	t.Run("generate gob-encoded POST request to target endpoint", func(t *testing.T) {
-		bk, cfg := newBenchmark(), newConfigWithTemplate("")
+		bk, cfg := newBenchmark(), newConfigWithOutput("")
 		rep := output.New(bk, cfg)
 
 		req, err := rep.HTTPRequest()
@@ -68,6 +69,22 @@ func TestReport_HTTPRequest(t *testing.T) {
 		}
 		checkRequest(t, req, rep)
 	})
+}
+
+func TestReport_Export(t *testing.T) {
+	t.Run("return ErrInvalidStrategy if Strategy is invalid", func(t *testing.T) {
+		rep := output.New(newBenchmark(), newConfigWithOutput("", "nostrat"))
+		if gotErr := rep.Export(); !errors.Is(gotErr, output.ErrInvalidStrategy) {
+			t.Errorf("\nexp ErrInvalidStrategy\ngot %v", gotErr)
+		}
+	})
+
+	// TODO:
+	// - "return accumulated errors"
+	// - "happy path"
+	// Both tests require to mock package export which implies
+	// increased complexity to its implementation.
+	// Let's keep that for later.
 }
 
 // helpers
@@ -86,12 +103,15 @@ func newBenchmark() requester.Benchmark {
 	}
 }
 
-func newConfigWithTemplate(tpl string) config.Global {
+func newConfigWithOutput(tpl string, strats ...config.OutputStrategy) config.Global {
 	urlURL, _ := url.ParseRequestURI("https://a.b.com")
 	return config.Global{
 		Request: config.Request{URL: urlURL},
 		Runner:  config.Runner{Requests: -1},
-		Output:  config.Output{Template: tpl},
+		Output: config.Output{
+			Out:      strats,
+			Template: tpl,
+		},
 	}
 }
 
