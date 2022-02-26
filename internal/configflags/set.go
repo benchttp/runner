@@ -8,9 +8,9 @@ import (
 	"github.com/benchttp/runner/config"
 )
 
-// Set reads CLI arguments as config.Fields and binds their value
-// to the appropriate fields of given *config.Global.
-func Set(cfg *config.Global) {
+// Set reads arguments provided to flagset as config.Fields and binds
+// their value to the appropriate fields of given *config.Global.
+func Set(flagset *flag.FlagSet, cfg *config.Global) {
 	// avoid nil pointer dereferences
 	if cfg.Request.URL == nil {
 		cfg.Request.URL = &url.URL{}
@@ -20,71 +20,71 @@ func Set(cfg *config.Global) {
 	}
 
 	// request url
-	flag.Var(urlValue{url: cfg.Request.URL},
+	flagset.Var(urlValue{url: cfg.Request.URL},
 		config.FieldURL,
 		config.FieldsDesc[config.FieldURL],
 	)
 	// request method
-	flag.StringVar(&cfg.Request.Method,
+	flagset.StringVar(&cfg.Request.Method,
 		config.FieldMethod,
 		"",
 		config.FieldsDesc[config.FieldMethod],
 	)
 	// request header
-	flag.Var(headerValue{header: &cfg.Request.Header},
+	flagset.Var(headerValue{header: &cfg.Request.Header},
 		config.FieldHeader,
 		config.FieldsDesc[config.FieldHeader],
 	)
 	// request body
-	flag.Var(bodyValue{body: &cfg.Request.Body},
+	flagset.Var(bodyValue{body: &cfg.Request.Body},
 		config.FieldBody,
 		config.FieldsDesc[config.FieldBody],
 	)
 	// requests number
-	flag.IntVar(&cfg.Runner.Requests,
+	flagset.IntVar(&cfg.Runner.Requests,
 		config.FieldRequests,
 		0,
 		config.FieldsDesc[config.FieldRequests],
 	)
 
 	// concurrency
-	flag.IntVar(&cfg.Runner.Concurrency,
+	flagset.IntVar(&cfg.Runner.Concurrency,
 		config.FieldConcurrency,
 		0,
 		config.FieldsDesc[config.FieldConcurrency],
 	)
 	// non-conurrent requests interval
-	flag.DurationVar(&cfg.Runner.Interval,
+	flagset.DurationVar(&cfg.Runner.Interval,
 		config.FieldInterval,
 		0,
 		config.FieldsDesc[config.FieldInterval],
 	)
 	// request timeout
-	flag.DurationVar(&cfg.Runner.RequestTimeout,
+	flagset.DurationVar(&cfg.Runner.RequestTimeout,
 		config.FieldRequestTimeout,
 		0,
 		config.FieldsDesc[config.FieldRequestTimeout],
 	)
 	// global timeout
-	flag.DurationVar(&cfg.Runner.GlobalTimeout,
+	flagset.DurationVar(&cfg.Runner.GlobalTimeout,
 		config.FieldGlobalTimeout,
 		0,
 		config.FieldsDesc[config.FieldGlobalTimeout],
 	)
 
 	// output strategies
-	flag.Var(outValue{out: &cfg.Output.Out},
+	flagset.Var(outValue{out: &cfg.Output.Out},
 		config.FieldOut,
 		config.FieldsDesc[config.FieldOut],
 	)
 	// silent mode
-	flag.BoolVar(&cfg.Output.Silent,
+	flagset.BoolVar(&cfg.Output.Silent,
 		config.FieldSilent,
 		false,
 		config.FieldsDesc[config.FieldSilent],
 	)
 	// output template
-	flag.StringVar(&cfg.Output.Template,
+	flagset.StringVar(&cfg.Output.Template,
 		config.FieldTemplate,
 		"",
 		config.FieldsDesc[config.FieldTemplate],

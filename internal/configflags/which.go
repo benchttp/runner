@@ -6,10 +6,11 @@ import (
 	"github.com/benchttp/runner/config"
 )
 
-// Which returns a slice of all config fields set via the CLI.
-func Which() []string {
+// Which returns a slice of all config fields set via the CLI
+// for the given FlagSet
+func Which(flagset *flag.FlagSet) []string {
 	var fields []string
-	flag.CommandLine.Visit(func(f *flag.Flag) {
+	flagset.Visit(func(f *flag.Flag) {
 		if name := f.Name; config.IsField(name) {
 			fields = append(fields, name)
 		}

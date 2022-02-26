@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 
@@ -28,32 +29,40 @@ var defaultConfigFiles = []string{
 	"./.benchttp.json",
 }
 
-func parseFlags() {
+func parseRunFlags() []string {
+	flagset := flag.NewFlagSet("run", flag.ExitOnError)
+
 	// config file path
-	flag.StringVar(&configFile,
+	flagset.StringVar(&configFile,
 		"configFile",
-		configfile.Find(defaultConfigFiles), "Config file path",
+		configfile.Find(defaultConfigFiles),
+		"Config file path",
 	)
 
-	// cliConfig
-	configflags.Set(&cliConfig)
+	// cli config
+	configflags.Set(flagset, &cliConfig)
 
-	flag.Parse()
+	if err := flagset.Parse(os.Args[2:]); err != nil {
+		log.Fatal(err)
+	}
+
+	return configflags.Which(flagset)
 }
 
 func main() {
+	// benchttp run [options]
 	if err := run(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	// TODO: benchttp auth [options]
 }
 
 func run() error {
-	parseFlags()
+	fieldsSet := parseRunFlags()
 
-	fmt.Println(cliConfig.Output.Out)
-
-	cfg, err := parseConfig()
+	cfg, err := makeConfig(fieldsSet)
 	if err != nil {
 		return err
 	}
@@ -80,16 +89,17 @@ func run() error {
 	return output.New(rep, cfg).Export()
 }
 
-// parseConfig returns a config.Config initialized with config file
-// options if found, overridden with CLI options.
-func parseConfig() (cfg config.Global, err error) {
+// makeConfig returns a config.Config initialized with config file
+// options if found, overridden with CLI options listed in fields
+// slice param.
+func makeConfig(fields []string) (cfg config.Global, err error) {
 	fileConfig, err := configfile.Parse(configFile)
 	if err != nil && !errors.Is(err, configfile.ErrFileNotFound) {
 		// config file is not mandatory, other errors are critical
 		return
 	}
 
-	mergedConfig := fileConfig.Override(cliConfig, configflags.Which()...)
+	mergedConfig := fileConfig.Override(cliConfig, fields...)
 
 	return mergedConfig, mergedConfig.Validate()
 }
