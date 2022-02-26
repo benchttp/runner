@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/benchttp/runner/config"
-	configfile "github.com/benchttp/runner/config/file"
 	"github.com/benchttp/runner/output"
 	"github.com/benchttp/runner/requester"
 )
