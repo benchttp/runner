@@ -6,13 +6,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
-	"strings"
 
 	"github.com/benchttp/runner/config"
+	"github.com/benchttp/runner/internal/configfile"
+	"github.com/benchttp/runner/internal/configflags"
 	"github.com/benchttp/runner/output"
 	"github.com/benchttp/runner/requester"
 )
@@ -29,86 +28,15 @@ var defaultConfigFiles = []string{
 	"./.benchttp.json",
 }
 
-func parseArgs() {
-	cliConfig.Request.URL = &url.URL{}
-	cliConfig.Request.Header = http.Header{}
-
+func parseFlags() {
 	// config file path
 	flag.StringVar(&configFile,
 		"configFile",
 		configfile.Find(defaultConfigFiles), "Config file path",
 	)
 
-	// request url
-	flag.Var(urlValue{url: cliConfig.Request.URL},
-		config.FieldURL,
-		config.FieldsDesc[config.FieldURL],
-	)
-	// request method
-	flag.StringVar(&cliConfig.Request.Method,
-		config.FieldMethod,
-		"",
-		config.FieldsDesc[config.FieldMethod],
-	)
-	// request header
-	flag.Var(headerValue{header: &cliConfig.Request.Header},
-		config.FieldHeader,
-		config.FieldsDesc[config.FieldHeader],
-	)
-	// request body
-	flag.Var(bodyValue{body: &cliConfig.Request.Body},
-		config.FieldBody,
-		config.FieldsDesc[config.FieldBody],
-	)
-	// requests number
-	flag.IntVar(&cliConfig.Runner.Requests,
-		config.FieldRequests,
-		0,
-		config.FieldsDesc[config.FieldRequests],
-	)
-
-	// concurrency
-	flag.IntVar(&cliConfig.Runner.Concurrency,
-		config.FieldConcurrency,
-		0,
-		config.FieldsDesc[config.FieldConcurrency],
-	)
-	// non-conurrent requests interval
-	flag.DurationVar(&cliConfig.Runner.Interval,
-		config.FieldInterval,
-		0,
-		config.FieldsDesc[config.FieldInterval],
-	)
-	// request timeout
-	flag.DurationVar(&cliConfig.Runner.RequestTimeout,
-		config.FieldRequestTimeout,
-		0,
-		config.FieldsDesc[config.FieldRequestTimeout],
-	)
-	// global timeout
-	flag.DurationVar(&cliConfig.Runner.GlobalTimeout,
-		config.FieldGlobalTimeout,
-		0,
-		config.FieldsDesc[config.FieldGlobalTimeout],
-	)
-
-	// output strategies
-	flag.Var(outValue{out: &cliConfig.Output.Out},
-		config.FieldOut,
-		config.FieldsDesc[config.FieldOut],
-	)
-	// silent mode
-	flag.BoolVar(&cliConfig.Output.Silent,
-		config.FieldSilent,
-		false,
-		config.FieldsDesc[config.FieldSilent],
-	)
-	// output template
-	flag.StringVar(&cliConfig.Output.Template,
-		config.FieldTemplate,
-		"",
-		config.FieldsDesc[config.FieldTemplate],
-	)
+	// cliConfig
+	configflags.Set(&cliConfig)
 
 	flag.Parse()
 }
@@ -121,7 +49,7 @@ func main() {
 }
 
 func run() error {
-	parseArgs()
+	parseFlags()
 
 	fmt.Println(cliConfig.Output.Out)
 
@@ -161,20 +89,9 @@ func parseConfig() (cfg config.Global, err error) {
 		return
 	}
 
-	mergedConfig := fileConfig.Override(cliConfig, configFlags()...)
+	mergedConfig := fileConfig.Override(cliConfig, configflags.Which()...)
 
 	return mergedConfig, mergedConfig.Validate()
-}
-
-// configFlags returns a slice of all config fields set via the CLI.
-func configFlags() []string {
-	var fields []string
-	flag.CommandLine.Visit(func(f *flag.Flag) {
-		if name := f.Name; config.IsField(name) {
-			fields = append(fields, name)
-		}
-	})
-	return fields
 }
 
 // requesterConfig returns a requester.Config generated from cfg.
@@ -187,122 +104,6 @@ func requesterConfig(cfg config.Global) requester.Config {
 		GlobalTimeout:  cfg.Runner.GlobalTimeout,
 		Silent:         cfg.Output.Silent,
 	}
-}
-
-// headerValue implements flag.Value
-type headerValue struct {
-	header *http.Header
-}
-
-// String returns a string representation of the referenced header.
-func (v headerValue) String() string {
-	return fmt.Sprint(v.header)
-}
-
-// Set reads input string in format "key:value" and appends value
-// to the key's values of the referenced header.
-func (v headerValue) Set(raw string) error {
-	keyval := strings.SplitN(raw, ":", 2)
-	if len(keyval) != 2 {
-		return errors.New(`expect format "<key>:<value>"`)
-	}
-	key, val := keyval[0], keyval[1]
-	(*v.header)[key] = append((*v.header)[key], val)
-	return nil
-}
-
-// bodyValue implements flag.Value
-type bodyValue struct {
-	body *config.Body
-}
-
-// String returns a string representation of the referenced body.
-func (v bodyValue) String() string {
-	return fmt.Sprint(v.body)
-}
-
-// Set reads input string in format "type:content" and sets
-// the referenced body accordingly.
-//
-// If type is "raw", content is the data as a string.
-//	"raw:{\"key\":\"value\"}" // escaped JSON
-//	"raw:text" // plain text
-// If type is "file", content is the path to the file holding the data.
-//	"file:./path/to/file.txt"
-//
-// Note: only type "raw" is supported at the moment.
-func (v bodyValue) Set(raw string) error {
-	errFormat := fmt.Errorf(`expect format "<type>:<content>", got "%s"`, raw)
-
-	if raw == "" {
-		return errFormat
-	}
-
-	split := strings.SplitN(raw, ":", 2)
-	if len(split) != 2 {
-		return errFormat
-	}
-
-	btype, bcontent := split[0], split[1]
-	if bcontent == "" {
-		return errFormat
-	}
-
-	switch btype {
-	case "raw":
-		*v.body = config.NewBody(btype, bcontent)
-	// case "file":
-	// 	// TODO
-	default:
-		return fmt.Errorf(`unsupported type: %s (only "raw" accepted`, btype)
-	}
-	return nil
-}
-
-// outValue implements flag.Value
-type outValue struct {
-	out *[]config.OutputStrategy
-}
-
-// String returns a string representation of outValue.out.
-func (v outValue) String() string {
-	return fmt.Sprint(v.out)
-}
-
-// Set reads input string as comma-separated values and appends the values
-// to the key's values of the referenced header.
-func (v outValue) Set(in string) error {
-	values := strings.Split(in, ",")
-	if len(values) < 1 {
-		return errors.New(`expect comma-separated values`)
-	}
-	for _, value := range values {
-		*v.out = append(*v.out, config.OutputStrategy(value))
-	}
-	return nil
-}
-
-// urlValue implements flag.Value
-type urlValue struct {
-	url *url.URL
-}
-
-// String returns a string representation of urlValue.url.
-func (v urlValue) String() string {
-	if v.url == nil {
-		return ""
-	}
-	return v.url.String()
-}
-
-// Set parses input string as a URL and sets the referenced URL accordingly.
-func (v urlValue) Set(in string) error {
-	urlURL, err := url.ParseRequestURI(in)
-	if err != nil {
-		return fmt.Errorf(`invalid url: "%s"`, in)
-	}
-	*v.url = *urlURL
-	return nil
 }
 
 // listenOSInterrupt listens for OS interrupt signals and calls callback.
