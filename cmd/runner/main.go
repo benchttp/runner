@@ -7,10 +7,10 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
-	"time"
 
 	"github.com/benchttp/runner/config"
 	configfile "github.com/benchttp/runner/config/file"
@@ -21,24 +21,7 @@ import (
 var (
 	configFile string
 
-	uri    string
-	method string // HTTP request method
-	header = http.Header{}
-	// HTTP body in format "type:content", type may be "raw" or "file".
-	// If type is "raw", content is the data as a string. If type is "file",
-	// content is the path to the file holding the data. Note: only "raw"
-	// is supported at the moment.
-	body config.Body
-
-	requests       int           // Number of requests to run, use duration as exit condition if omitted.
-	concurrency    int           // Number of connections to run concurrently
-	interval       time.Duration // Minimum duration between two groups of requests
-	requestTimeout time.Duration // Timeout for each HTTP request
-	globalTimeout  time.Duration // Duration of test
-
-	out      []config.OutputStrategy // Output destinations (benchttp,json,stdout)
-	silent   bool                    // Silent mode (no write to stdout)
-	template string
+	cliConfig config.Global
 )
 
 var defaultConfigFiles = []string{
@@ -48,35 +31,39 @@ var defaultConfigFiles = []string{
 }
 
 func parseArgs() {
+	cliConfig.Request.URL = &url.URL{}
+	cliConfig.Request.Header = http.Header{}
+
 	// config file path
 	flag.StringVar(&configFile, "configFile", configfile.Find(defaultConfigFiles), "Config file path")
 
 	// request url
-	flag.StringVar(&uri, config.FieldURL, "", "Target URL to request")
+	flag.Var(&urlValue{url: cliConfig.Request.URL}, config.FieldURL, "HTTP request url")
+
 	// request method
-	flag.StringVar(&method, config.FieldMethod, "", "HTTP request method")
+	flag.StringVar(&cliConfig.Request.Method, config.FieldMethod, "", "HTTP request method")
 	// request header
-	flag.Var(headerValue{header: &header}, config.FieldHeader, "HTTP request header")
+	flag.Var(headerValue{header: &cliConfig.Request.Header}, config.FieldHeader, "HTTP request header")
 	// request body
-	flag.Var(bodyValue{body: &body}, config.FieldBody, "HTTP request body")
+	flag.Var(bodyValue{body: &cliConfig.Request.Body}, config.FieldBody, "HTTP request body")
 
 	// requests number
-	flag.IntVar(&requests, config.FieldRequests, 0, "Number of requests to run, use duration as exit condition if omitted")
+	flag.IntVar(&cliConfig.Runner.Requests, config.FieldRequests, 0, "Number of requests to run, use duration as exit condition if omitted")
 	// concurrency
-	flag.IntVar(&concurrency, config.FieldConcurrency, 0, "Number of connections to run concurrently")
+	flag.IntVar(&cliConfig.Runner.Concurrency, config.FieldConcurrency, 0, "Number of connections to run concurrently")
 	// non-conurrent requests interval
-	flag.DurationVar(&interval, "interval", 0, "Minimum duration between two non concurrent requests")
+	flag.DurationVar(&cliConfig.Runner.Interval, "interval", 0, "Minimum duration between two non concurrent requests")
 	// request timeout
-	flag.DurationVar(&requestTimeout, config.FieldRequestTimeout, 0, "Timeout for each HTTP request")
+	flag.DurationVar(&cliConfig.Runner.RequestTimeout, config.FieldRequestTimeout, 0, "Timeout for each HTTP request")
 	// global timeout
-	flag.DurationVar(&globalTimeout, config.FieldGlobalTimeout, 0, "Max duration of test")
+	flag.DurationVar(&cliConfig.Runner.GlobalTimeout, config.FieldGlobalTimeout, 0, "Max duration of test")
 
 	// output strategies
-	flag.Var(outValue{out: &out}, config.FieldOut, "Output destination (benchttp,json,stdout)")
+	flag.Var(outValue{out: &cliConfig.Output.Out}, config.FieldOut, "Output destination (benchttp,json,stdout)")
 	// silent mode
-	flag.BoolVar(&silent, config.FieldSilent, false, "Silent mode (no write to stdout)")
+	flag.BoolVar(&cliConfig.Output.Silent, config.FieldSilent, false, "Silent mode (no write to stdout)")
 	// output template
-	flag.StringVar(&template, "template", "", "Custom stdout output template")
+	flag.StringVar(&cliConfig.Output.Template, "template", "", "Custom stdout output template")
 
 	flag.Parse()
 }
@@ -90,6 +77,8 @@ func main() {
 
 func run() error {
 	parseArgs()
+
+	fmt.Println(cliConfig.Output.Out)
 
 	cfg, err := parseConfig()
 	if err != nil {
@@ -121,32 +110,13 @@ func run() error {
 // parseConfig returns a config.Config initialized with config file
 // options if found, overridden with CLI options.
 func parseConfig() (cfg config.Global, err error) {
-	fileCfg, err := configfile.Parse(configFile)
+	fileConfig, err := configfile.Parse(configFile)
 	if err != nil && !errors.Is(err, configfile.ErrFileNotFound) {
 		// config file is not mandatory, other errors are critical
 		return
 	}
 
-	cliCfg := config.Global{
-		Request: config.Request{
-			Header: header,
-			Body:   body,
-		}.WithURL(uri),
-		Runner: config.Runner{
-			Requests:       requests,
-			Concurrency:    concurrency,
-			Interval:       interval,
-			RequestTimeout: requestTimeout,
-			GlobalTimeout:  globalTimeout,
-		},
-		Output: config.Output{
-			Out:      out,
-			Silent:   silent,
-			Template: template,
-		},
-	}
-
-	mergedConfig := fileCfg.Override(cliCfg, configFlags()...)
+	mergedConfig := fileConfig.Override(cliConfig, configFlags()...)
 
 	return mergedConfig, mergedConfig.Validate()
 }
@@ -264,6 +234,29 @@ func (v outValue) Set(in string) error {
 	for _, value := range values {
 		*v.out = append(*v.out, config.OutputStrategy(value))
 	}
+	return nil
+}
+
+// urlValue implements flag.Value
+type urlValue struct {
+	url *url.URL
+}
+
+// String returns a string representation of urlValue.url.
+func (v urlValue) String() string {
+	if v.url == nil {
+		return ""
+	}
+	return v.url.String()
+}
+
+// Set parses input string as a URL and sets the referenced URL accordingly.
+func (v urlValue) Set(in string) error {
+	urlURL, err := url.ParseRequestURI(in)
+	if err != nil {
+		return fmt.Errorf(`invalid url: "%s"`, in)
+	}
+	*v.url = *urlURL
 	return nil
 }
 
