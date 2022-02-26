@@ -35,35 +35,81 @@ func parseArgs() {
 	cliConfig.Request.Header = http.Header{}
 
 	// config file path
-	flag.StringVar(&configFile, "configFile", configfile.Find(defaultConfigFiles), "Config file path")
+	flag.StringVar(&configFile,
+		"configFile",
+		configfile.Find(defaultConfigFiles), "Config file path",
+	)
 
 	// request url
-	flag.Var(&urlValue{url: cliConfig.Request.URL}, config.FieldURL, "HTTP request url")
-
+	flag.Var(urlValue{url: cliConfig.Request.URL},
+		config.FieldURL,
+		config.FieldsDesc[config.FieldURL],
+	)
 	// request method
-	flag.StringVar(&cliConfig.Request.Method, config.FieldMethod, "", "HTTP request method")
+	flag.StringVar(&cliConfig.Request.Method,
+		config.FieldMethod,
+		"",
+		config.FieldsDesc[config.FieldMethod],
+	)
 	// request header
-	flag.Var(headerValue{header: &cliConfig.Request.Header}, config.FieldHeader, "HTTP request header")
+	flag.Var(headerValue{header: &cliConfig.Request.Header},
+		config.FieldHeader,
+		config.FieldsDesc[config.FieldHeader],
+	)
 	// request body
-	flag.Var(bodyValue{body: &cliConfig.Request.Body}, config.FieldBody, "HTTP request body")
-
+	flag.Var(bodyValue{body: &cliConfig.Request.Body},
+		config.FieldBody,
+		config.FieldsDesc[config.FieldBody],
+	)
 	// requests number
-	flag.IntVar(&cliConfig.Runner.Requests, config.FieldRequests, 0, "Number of requests to run, use duration as exit condition if omitted")
+	flag.IntVar(&cliConfig.Runner.Requests,
+		config.FieldRequests,
+		0,
+		config.FieldsDesc[config.FieldRequests],
+	)
+
 	// concurrency
-	flag.IntVar(&cliConfig.Runner.Concurrency, config.FieldConcurrency, 0, "Number of connections to run concurrently")
+	flag.IntVar(&cliConfig.Runner.Concurrency,
+		config.FieldConcurrency,
+		0,
+		config.FieldsDesc[config.FieldConcurrency],
+	)
 	// non-conurrent requests interval
-	flag.DurationVar(&cliConfig.Runner.Interval, "interval", 0, "Minimum duration between two non concurrent requests")
+	flag.DurationVar(&cliConfig.Runner.Interval,
+		config.FieldInterval,
+		0,
+		config.FieldsDesc[config.FieldInterval],
+	)
 	// request timeout
-	flag.DurationVar(&cliConfig.Runner.RequestTimeout, config.FieldRequestTimeout, 0, "Timeout for each HTTP request")
+	flag.DurationVar(&cliConfig.Runner.RequestTimeout,
+		config.FieldRequestTimeout,
+		0,
+		config.FieldsDesc[config.FieldRequestTimeout],
+	)
 	// global timeout
-	flag.DurationVar(&cliConfig.Runner.GlobalTimeout, config.FieldGlobalTimeout, 0, "Max duration of test")
+	flag.DurationVar(&cliConfig.Runner.GlobalTimeout,
+		config.FieldGlobalTimeout,
+		0,
+		config.FieldsDesc[config.FieldGlobalTimeout],
+	)
 
 	// output strategies
-	flag.Var(outValue{out: &cliConfig.Output.Out}, config.FieldOut, "Output destination (benchttp,json,stdout)")
+	flag.Var(outValue{out: &cliConfig.Output.Out},
+		config.FieldOut,
+		config.FieldsDesc[config.FieldOut],
+	)
 	// silent mode
-	flag.BoolVar(&cliConfig.Output.Silent, config.FieldSilent, false, "Silent mode (no write to stdout)")
+	flag.BoolVar(&cliConfig.Output.Silent,
+		config.FieldSilent,
+		false,
+		config.FieldsDesc[config.FieldSilent],
+	)
 	// output template
-	flag.StringVar(&cliConfig.Output.Template, "template", "", "Custom stdout output template")
+	flag.StringVar(&cliConfig.Output.Template,
+		config.FieldTemplate,
+		"",
+		config.FieldsDesc[config.FieldTemplate],
+	)
 
 	flag.Parse()
 }
