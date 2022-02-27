@@ -37,6 +37,9 @@ type cmdRun struct {
 	config config.Global
 }
 
+// ensure cmdRun implements command
+var _ command = (*cmdRun)(nil)
+
 // execute runs the benchttp runner: it parses CLI flags, loads config
 // from config file and parsed flags, then runs the benchmark and outputs
 // it according to the config.

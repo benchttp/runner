@@ -26,22 +26,28 @@ func run() error {
 		return fmt.Errorf("%w: no command specified", errUsage)
 	}
 
+	var cmd command
 	args := os.Args[1:]
 
 	switch sub := args[0]; sub {
 	case "run":
-		cmd := cmdRun{
+		cmd = cmdRun{
 			flagset:            flag.NewFlagSet("run", flag.ExitOnError),
 			config:             config.Default(),
 			defaultConfigFiles: defaultConfigFiles,
 		}
-		return cmd.execute(args)
 	case "auth":
-		cmd := cmdAuth{
+		cmd = cmdAuth{
 			flagset: flag.NewFlagSet("auth", flag.ExitOnError),
 		}
-		return cmd.execute(args)
 	default:
 		return fmt.Errorf("%w: unknown command: %s", errUsage, sub)
 	}
+
+	return cmd.execute(args)
+}
+
+// command is the interface that all benchttp subcommands must implement.
+type command interface {
+	execute(args []string) error
 }
