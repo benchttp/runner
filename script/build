@@ -1,6 +1,6 @@
 #!/bin/bash
 
-platforms="darwin/amd64 darwin/arm64 linux/386 linux/amd64 linux/arm linux/arm64 windows/386 windows/amd64"
+platforms="darwin/amd64 darwin/arm64 linux/386 linux/amd64 windows/386 windows/amd64"
 
 # clear bin directory
 rm -rf ./bin/*
@@ -22,7 +22,7 @@ for platform in ${platforms}; do
     # build binary
     GOOS="$goos" GOARCH="$goarch" go build -tags prod -o "$output" ./cmd/runner
 
-    echo "[$i/8] $output"
+    echo "[$i/6] $output"
 done
 
 echo -e "\033[1;32m✔︎\033[0m Build complete!"
