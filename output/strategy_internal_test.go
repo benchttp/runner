@@ -88,7 +88,7 @@ func TestStrategy_is(t *testing.T) {
 				exp:    true,
 			},
 			{
-				label:  "combined base Strategies",
+				label:  "combined target Strategies",
 				base:   Benchttp,
 				target: Stdout | Benchttp,
 				exp:    true,
