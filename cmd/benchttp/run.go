@@ -43,7 +43,7 @@ var _ command = (*cmdRun)(nil)
 // execute runs the benchttp runner: it parses CLI flags, loads config
 // from config file and parsed flags, then runs the benchmark and outputs
 // it according to the config.
-func (cmd cmdRun) execute(args []string) error {
+func (cmd *cmdRun) execute(args []string) error {
 	fieldsSet := cmd.parseArgs(args)
 
 	cfg, err := cmd.makeConfig(fieldsSet)
@@ -99,7 +99,7 @@ func (cmd *cmdRun) parseArgs(args []string) []string {
 // makeConfig returns a config.Config initialized with config file
 // options if found, overridden with CLI options listed in fields
 // slice param.
-func (cmd cmdRun) makeConfig(fields []string) (cfg config.Global, err error) {
+func (cmd *cmdRun) makeConfig(fields []string) (cfg config.Global, err error) {
 	fileConfig, err := configfile.Parse(cmd.configFile)
 	if err != nil && !errors.Is(err, configfile.ErrFileNotFound) {
 		// config file is not mandatory, other errors are critical
@@ -112,7 +112,7 @@ func (cmd cmdRun) makeConfig(fields []string) (cfg config.Global, err error) {
 }
 
 // requesterConfig returns a requester.Config generated from cfg.
-func (cmd cmdRun) requesterConfig(cfg config.Global) requester.Config {
+func (*cmdRun) requesterConfig(cfg config.Global) requester.Config {
 	return requester.Config{
 		Requests:       cfg.Runner.Requests,
 		Concurrency:    cfg.Runner.Concurrency,
@@ -124,7 +124,7 @@ func (cmd cmdRun) requesterConfig(cfg config.Global) requester.Config {
 }
 
 // handleRunInterrupt handles the case when the runner is interrupted.
-func (cmd cmdRun) handleRunInterrupt() error {
+func (*cmdRun) handleRunInterrupt() error {
 	reader := bufio.NewReader(os.Stdin)
 	// TODO: list output strategies
 	// TODO: do not prompt if strategy is stdout only

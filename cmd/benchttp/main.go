@@ -31,13 +31,13 @@ func run() error {
 
 	switch sub := args[0]; sub {
 	case "run":
-		cmd = cmdRun{
+		cmd = &cmdRun{
 			flagset:            flag.NewFlagSet("run", flag.ExitOnError),
 			config:             config.Default(),
 			defaultConfigFiles: defaultConfigFiles,
 		}
 	case "auth":
-		cmd = cmdAuth{
+		cmd = &cmdAuth{
 			flagset: flag.NewFlagSet("auth", flag.ExitOnError),
 		}
 	default:
