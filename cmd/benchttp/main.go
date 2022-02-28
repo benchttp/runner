@@ -5,8 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-
-	"github.com/benchttp/runner/config"
 )
 
 var errUsage = errors.New("usage")
@@ -31,15 +29,9 @@ func run() error {
 
 	switch sub := args[0]; sub {
 	case "run":
-		cmd = &cmdRun{
-			flagset:            flag.NewFlagSet("run", flag.ExitOnError),
-			config:             config.Default(),
-			defaultConfigFiles: defaultConfigFiles,
-		}
+		cmd = &cmdRun{flagset: flag.NewFlagSet("run", flag.ExitOnError)}
 	case "auth":
-		cmd = &cmdAuth{
-			flagset: flag.NewFlagSet("auth", flag.ExitOnError),
-		}
+		cmd = &cmdAuth{flagset: flag.NewFlagSet("auth", flag.ExitOnError)}
 	default:
 		return fmt.Errorf("%w: unknown command: %s", errUsage, sub)
 	}

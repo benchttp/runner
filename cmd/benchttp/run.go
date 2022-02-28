@@ -16,12 +16,6 @@ import (
 	"github.com/benchttp/runner/requester"
 )
 
-var defaultConfigFiles = []string{
-	"./.benchttp.yml",
-	"./.benchttp.yaml",
-	"./.benchttp.json",
-}
-
 // cmdRun handles subcommand "benchttp run [options]".
 type cmdRun struct {
 	flagset *flag.FlagSet
@@ -40,10 +34,22 @@ type cmdRun struct {
 // ensure cmdRun implements command
 var _ command = (*cmdRun)(nil)
 
+// init initializes cmdRun with default values.
+func (cmd *cmdRun) init() {
+	cmd.config = config.Default()
+	cmd.defaultConfigFiles = []string{
+		"./.benchttp.yml",
+		"./.benchttp.yaml",
+		"./.benchttp.json",
+	}
+}
+
 // execute runs the benchttp runner: it parses CLI flags, loads config
 // from config file and parsed flags, then runs the benchmark and outputs
 // it according to the config.
 func (cmd *cmdRun) execute(args []string) error {
+	cmd.init()
+
 	fieldsSet := cmd.parseArgs(args)
 
 	cfg, err := cmd.makeConfig(fieldsSet)
