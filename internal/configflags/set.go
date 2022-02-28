@@ -10,83 +10,85 @@ import (
 
 // Set reads arguments provided to flagset as config.Fields and binds
 // their value to the appropriate fields of given *config.Global.
-func Set(flagset *flag.FlagSet, cfg *config.Global) {
+// The provided *flag.Flagset must not have been parsed yet, otherwise
+// bindings its values would fail.
+func Set(flagset *flag.FlagSet, dst *config.Global) {
 	// avoid nil pointer dereferences
-	if cfg.Request.URL == nil {
-		cfg.Request.URL = &url.URL{}
+	if dst.Request.URL == nil {
+		dst.Request.URL = &url.URL{}
 	}
-	if cfg.Request.Header == nil {
-		cfg.Request.Header = http.Header{}
+	if dst.Request.Header == nil {
+		dst.Request.Header = http.Header{}
 	}
 
 	// request url
-	flagset.Var(urlValue{url: cfg.Request.URL},
+	flagset.Var(urlValue{url: dst.Request.URL},
 		config.FieldURL,
-		config.FieldsDesc[config.FieldURL],
+		config.FieldsUsage[config.FieldURL],
 	)
 	// request method
-	flagset.StringVar(&cfg.Request.Method,
+	flagset.StringVar(&dst.Request.Method,
 		config.FieldMethod,
-		cfg.Request.Method,
-		config.FieldsDesc[config.FieldMethod],
+		dst.Request.Method,
+		config.FieldsUsage[config.FieldMethod],
 	)
 	// request header
-	flagset.Var(headerValue{header: &cfg.Request.Header},
+	flagset.Var(headerValue{header: &dst.Request.Header},
 		config.FieldHeader,
-		config.FieldsDesc[config.FieldHeader],
+		config.FieldsUsage[config.FieldHeader],
 	)
 	// request body
-	flagset.Var(bodyValue{body: &cfg.Request.Body},
+	flagset.Var(bodyValue{body: &dst.Request.Body},
 		config.FieldBody,
-		config.FieldsDesc[config.FieldBody],
+		config.FieldsUsage[config.FieldBody],
 	)
 	// requests number
-	flagset.IntVar(&cfg.Runner.Requests,
+	flagset.IntVar(&dst.Runner.Requests,
 		config.FieldRequests,
-		cfg.Runner.Requests,
-		config.FieldsDesc[config.FieldRequests],
+		dst.Runner.Requests,
+		config.FieldsUsage[config.FieldRequests],
 	)
 
 	// concurrency
-	flagset.IntVar(&cfg.Runner.Concurrency,
+	flagset.IntVar(&dst.Runner.Concurrency,
 		config.FieldConcurrency,
-		cfg.Runner.Concurrency,
-		config.FieldsDesc[config.FieldConcurrency],
+		dst.Runner.Concurrency,
+		config.FieldsUsage[config.FieldConcurrency],
 	)
 	// non-conurrent requests interval
-	flagset.DurationVar(&cfg.Runner.Interval,
+	flagset.DurationVar(&dst.Runner.Interval,
 		config.FieldInterval,
-		cfg.Runner.Interval,
-		config.FieldsDesc[config.FieldInterval],
+		dst.Runner.Interval,
+		config.FieldsUsage[config.FieldInterval],
 	)
 	// request timeout
-	flagset.DurationVar(&cfg.Runner.RequestTimeout,
+	flagset.DurationVar(&dst.Runner.RequestTimeout,
 		config.FieldRequestTimeout,
-		cfg.Runner.RequestTimeout,
-		config.FieldsDesc[config.FieldRequestTimeout],
+		dst.Runner.RequestTimeout,
+		config.FieldsUsage[config.FieldRequestTimeout],
 	)
 	// global timeout
-	flagset.DurationVar(&cfg.Runner.GlobalTimeout,
+	flagset.DurationVar(&dst.Runner.GlobalTimeout,
 		config.FieldGlobalTimeout,
-		cfg.Runner.GlobalTimeout,
-		config.FieldsDesc[config.FieldGlobalTimeout],
+		dst.Runner.GlobalTimeout,
+		config.FieldsUsage[config.FieldGlobalTimeout],
 	)
 
 	// output strategies
-	flagset.Var(outValue{out: &cfg.Output.Out},
+	flagset.Var(outValue{out: &dst.Output.Out},
 		config.FieldOut,
-		config.FieldsDesc[config.FieldOut],
+		config.FieldsUsage[config.FieldOut],
 	)
 	// silent mode
-	flagset.BoolVar(&cfg.Output.Silent,
+	flagset.BoolVar(&dst.Output.Silent,
 		config.FieldSilent,
-		cfg.Output.Silent,
-		config.FieldsDesc[config.FieldSilent],
+		dst.Output.Silent,
+		config.FieldsUsage[config.FieldSilent],
 	)
 	// output template
-	flagset.StringVar(&cfg.Output.Template,
+	flagset.StringVar(&dst.Output.Template,
 		config.FieldTemplate,
-		cfg.Output.Template,
-		config.FieldsDesc[config.FieldTemplate],
+		dst.Output.Template,
+		config.FieldsUsage[config.FieldTemplate],
 	)
 }

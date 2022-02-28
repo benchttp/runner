@@ -7,7 +7,7 @@ import (
 )
 
 // Which returns a slice of all config fields set via the CLI
-// for the given FlagSet
+// for the given *flag.FlagSet.
 func Which(flagset *flag.FlagSet) []string {
 	var fields []string
 	flagset.Visit(func(f *flag.Flag) {

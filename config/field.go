@@ -15,8 +15,8 @@ const (
 	FieldTemplate       = "template"
 )
 
-// FieldsDesc is a record of all available config fields and their description.
-var FieldsDesc = map[string]string{
+// FieldsUsage is a record of all available config fields and their usage.
+var FieldsUsage = map[string]string{
 	FieldMethod:         "HTTP request method",
 	FieldURL:            "HTTP request url",
 	FieldHeader:         "HTTP request header",
@@ -32,6 +32,6 @@ var FieldsDesc = map[string]string{
 }
 
 func IsField(v string) bool {
-	_, exists := FieldsDesc[v]
+	_, exists := FieldsUsage[v]
 	return exists
 }
