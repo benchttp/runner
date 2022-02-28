@@ -7,11 +7,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/signal"
 
 	"github.com/benchttp/runner/config"
 	"github.com/benchttp/runner/internal/configfile"
 	"github.com/benchttp/runner/internal/configflags"
+	"github.com/benchttp/runner/internal/signals"
 	"github.com/benchttp/runner/output"
 	"github.com/benchttp/runner/requester"
 )
@@ -57,7 +57,7 @@ func (cmd cmdRun) execute(args []string) error {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	go cmd.listenOSInterrupt(cancel)
+	go signals.ListenOSInterrupt(cancel)
 
 	rep, err := requester.New(cmd.requesterConfig(cfg)).Run(ctx, req)
 	if err != nil {
@@ -121,16 +121,6 @@ func (cmd cmdRun) requesterConfig(cfg config.Global) requester.Config {
 		GlobalTimeout:  cfg.Runner.GlobalTimeout,
 		Silent:         cfg.Output.Silent,
 	}
-}
-
-// listenOSInterrupt listens for OS interrupt signals and calls callback.
-// It should be called in a separate goroutine from main as it blocks
-// the execution until the OS interrupt signal is received.
-func (cmd cmdRun) listenOSInterrupt(callback func()) {
-	sigC := make(chan os.Signal, 1)
-	signal.Notify(sigC, os.Interrupt)
-	<-sigC
-	callback()
 }
 
 // handleRunInterrupt handles the case when the runner is interrupted.
