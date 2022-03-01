@@ -82,7 +82,8 @@ func (cmd *cmdRun) execute(args []string) error {
 // parseArgs parses input args as config fields and returns
 // a slice of fields that were set by the user.
 func (cmd *cmdRun) parseArgs(args []string) []string {
-	// config file path
+	// config file path: always read it so it can be
+	// properly defaulted if not set.
 	cmd.flagset.StringVar(&cmd.configFile,
 		"configFile",
 		configfile.Find(cmd.defaultConfigFiles),
@@ -90,11 +91,12 @@ func (cmd *cmdRun) parseArgs(args []string) []string {
 	)
 
 	// first arg is subcommand "run"
+	// skip parsing if no flags are provided
 	if len(args) <= 1 {
 		return []string{}
 	}
 
-	// cli config
+	// attach config options flags to the flagset
 	configflags.Set(cmd.flagset, &cmd.config)
 
 	cmd.flagset.Parse(args[1:]) //nolint:errcheck // never occurs due to flag.ExitOnError
@@ -102,7 +104,7 @@ func (cmd *cmdRun) parseArgs(args []string) []string {
 	return configflags.Which(cmd.flagset)
 }
 
-// makeConfig returns a config.Config initialized with config file
+// makeConfig returns a config.Global initialized with config file
 // options if found, overridden with CLI options listed in fields
 // slice param.
 func (cmd *cmdRun) makeConfig(fields []string) (cfg config.Global, err error) {
