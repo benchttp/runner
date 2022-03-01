@@ -82,17 +82,17 @@ func (cmd *cmdRun) execute(args []string) error {
 // parseArgs parses input args as config fields and returns
 // a slice of fields that were set by the user.
 func (cmd *cmdRun) parseArgs(args []string) []string {
-	// first arg is subcommand "run"
-	if len(args) <= 1 {
-		return []string{}
-	}
-
 	// config file path
 	cmd.flagset.StringVar(&cmd.configFile,
 		"configFile",
 		configfile.Find(cmd.defaultConfigFiles),
 		"Config file path",
 	)
+
+	// first arg is subcommand "run"
+	if len(args) <= 1 {
+		return []string{}
+	}
 
 	// cli config
 	configflags.Set(cmd.flagset, &cmd.config)
