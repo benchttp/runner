@@ -20,6 +20,14 @@ import (
 	"github.com/benchttp/runner/requester"
 )
 
+type basicStats struct {
+	Min, Max, Mean time.Duration
+}
+
+func (s basicStats) isZero() bool {
+	return s == basicStats{}
+}
+
 // Report represent a benchmark result as exported by the runner.
 type Report struct {
 	Benchmark requester.Benchmark
@@ -27,6 +35,8 @@ type Report struct {
 		Config     config.Global
 		FinishedAt time.Time
 	}
+
+	stats basicStats
 
 	log func(v ...interface{})
 }
@@ -163,7 +173,10 @@ func (rep *Report) applyTemplate(pattern string) (string, error) {
 		return "", errTemplateEmpty
 	}
 
-	t, err := template.New("report").Parse(pattern)
+	t, err := template.
+		New("report").
+		Funcs(rep.templateFuncs()).
+		Parse(pattern)
 	if err != nil {
 		return "", fmt.Errorf("%w: %s", errTemplateSyntax, err)
 	}
@@ -174,6 +187,17 @@ func (rep *Report) applyTemplate(pattern string) (string, error) {
 	}
 
 	return b.String(), nil
+}
+
+func (rep *Report) templateFuncs() template.FuncMap {
+	return template.FuncMap{
+		"stats": func() basicStats {
+			if rep.stats.isZero() {
+				rep.stats.Min, rep.stats.Max, rep.stats.Mean = rep.Benchmark.Stats()
+			}
+			return rep.stats
+		},
+	}
 }
 
 // HTTPRequest returns the *http.Request to be sent to Benchttp server.
