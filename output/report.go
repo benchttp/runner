@@ -82,7 +82,7 @@ func (rep *Report) Export() error {
 		ok = true
 	}
 	if s.is(JSONFile) {
-		filename := genFilename()
+		filename := genFilename(time.Now().UTC())
 		if err := export.JSONFile(filename, rep); err != nil {
 			errs = append(errs, err)
 		} else {
@@ -131,6 +131,8 @@ func (rep *Report) String() string {
 	case errors.Is(err, errTemplateEmpty):
 		// template is empty, use default summary.
 	}
+
+	// generate default summary
 
 	line := func(name string, value interface{}) string {
 		const template = "%-18s %v\n"
@@ -195,16 +197,15 @@ func encodeGob(rep *Report) ([]byte, error) {
 }
 
 // genFilename generates a JSON file name suffixed with a timestamp
-// located in the working directory.
-func genFilename() string {
-	return fmt.Sprintf("./benchttp.report.%s.json", timestamp())
+// of the given time, located in the working directory.
+func genFilename(t time.Time) string {
+	return fmt.Sprintf("./benchttp.report.%s.json", timestamp(t))
 }
 
-// timestamp returns the current time in format YYYYMMDDhhmmss.
-func timestamp() string {
-	now := time.Now().UTC()
-	y, m, d := now.Date()
-	hh, mm, ss := now.Clock()
+// timestamp returns the given time.Time in format YYYYMMDDhhmmss.
+func timestamp(t time.Time) string {
+	y, m, d := t.Date()
+	hh, mm, ss := t.Clock()
 	return strings.ReplaceAll(
 		fmt.Sprintf("%4d%2d%2d%2d%2d%2d", y, m, d, hh, mm, ss),
 		" ", "0",
