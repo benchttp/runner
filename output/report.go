@@ -38,6 +38,8 @@ type Report struct {
 
 	stats basicStats
 
+	errTplFailTriggered error
+
 	log func(v ...interface{})
 }
 
@@ -105,7 +107,7 @@ func (rep *Report) Export() error {
 	if len(errs) != 0 {
 		return &ExportError{Errors: errs}
 	}
-	return nil
+	return rep.errTplFailTriggered
 }
 
 // export.Interface implementation
@@ -205,6 +207,16 @@ func (rep *Report) templateFuncs() template.FuncMap {
 				}
 			}
 			return 0
+		},
+
+		"fail": func(a ...interface{}) string {
+			if rep.errTplFailTriggered == nil {
+				rep.errTplFailTriggered = fmt.Errorf(
+					"%w: %s",
+					ErrTplFailTriggered, fmt.Sprint(a...),
+				)
+			}
+			return ""
 		},
 	}
 }
