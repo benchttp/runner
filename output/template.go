@@ -34,8 +34,12 @@ func (rep *Report) applyTemplate(pattern string) (string, error) {
 	return b.String(), nil
 }
 
+// templateFuncs returns a template.FuncMap defining template functions
+// that are specific to the Report: stats, event, fail.
 func (rep *Report) templateFuncs() template.FuncMap {
 	return template.FuncMap{
+		// stats computes basic stats for the Report if not already done,
+		// and returns the results as basicStats.
 		"stats": func() basicStats {
 			if rep.stats.isZero() {
 				rep.stats.Min, rep.stats.Max, rep.stats.Mean = rep.Benchmark.Stats()
@@ -43,6 +47,8 @@ func (rep *Report) templateFuncs() template.FuncMap {
 			return rep.stats
 		},
 
+		// event retrieves an event from the input record given a its name
+		// and returns its time.
 		"event": func(rec requester.Record, name string) time.Duration {
 			for _, e := range rec.Events {
 				if e.Name == name {
@@ -52,6 +58,8 @@ func (rep *Report) templateFuncs() template.FuncMap {
 			return 0
 		},
 
+		// fail sets rep.errTplFailTriggered to the given error, causing
+		// the test to fail
 		"fail": func(a ...interface{}) string {
 			if rep.errTplFailTriggered == nil {
 				rep.errTplFailTriggered = fmt.Errorf(
