@@ -13,7 +13,7 @@ import (
 
 var validBody = config.NewBody("raw", `{"key0": "val0", "key1": "val1"}`)
 
-func TestValidate(t *testing.T) {
+func TestGlobal_Validate(t *testing.T) {
 	t.Run("test valid configuration", func(t *testing.T) {
 		cfg := config.Global{
 			Request: config.Request{
@@ -70,28 +70,7 @@ func TestValidate(t *testing.T) {
 	})
 }
 
-func TestWithURL(t *testing.T) {
-	t.Run("set empty url if invalid", func(t *testing.T) {
-		cfg := config.Global{Request: config.Request{}.WithURL("abc")}
-		if got := cfg.Request.URL; !reflect.DeepEqual(got, &url.URL{}) {
-			t.Errorf("exp empty *url.URL, got %v", got)
-		}
-	})
-
-	t.Run("set parsed url", func(t *testing.T) {
-		var (
-			rawURL    = "http://benchttp.app?cool=true"
-			expURL, _ = url.ParseRequestURI(rawURL)
-			gotURL    = config.Request{}.WithURL(rawURL).URL
-		)
-
-		if !reflect.DeepEqual(gotURL, expURL) {
-			t.Errorf("\nexp %v\ngot %v", expURL, gotURL)
-		}
-	})
-}
-
-func TestOverride(t *testing.T) {
+func TestGlobal_Override(t *testing.T) {
 	t.Run("do not override unspecified fields", func(t *testing.T) {
 		baseCfg := config.Global{}
 		newCfg := config.Global{
@@ -238,13 +217,34 @@ func TestOverride(t *testing.T) {
 	})
 }
 
-// To check that the error message is as expected
+func TestRequest_WithURL(t *testing.T) {
+	t.Run("set empty url if invalid", func(t *testing.T) {
+		cfg := config.Global{Request: config.Request{}.WithURL("abc")}
+		if got := cfg.Request.URL; !reflect.DeepEqual(got, &url.URL{}) {
+			t.Errorf("exp empty *url.URL, got %v", got)
+		}
+	})
+
+	t.Run("set parsed url", func(t *testing.T) {
+		var (
+			rawURL    = "http://benchttp.app?cool=true"
+			expURL, _ = url.ParseRequestURI(rawURL)
+			gotURL    = config.Request{}.WithURL(rawURL).URL
+		)
+
+		if !reflect.DeepEqual(gotURL, expURL) {
+			t.Errorf("\nexp %v\ngot %v", expURL, gotURL)
+		}
+	})
+}
+
+// helpers
+
+// errorContains returns trus if err's message contains expected string,
+// false otherwise
 func errorContains(err error, expected string) bool {
 	if err == nil {
 		return expected == ""
-	}
-	if expected == "" {
-		return false
 	}
 	return strings.Contains(err.Error(), expected)
 }
