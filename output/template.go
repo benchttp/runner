@@ -64,7 +64,7 @@ func (rep *Report) templateFuncs() template.FuncMap {
 			if rep.errTplFailTriggered == nil {
 				rep.errTplFailTriggered = fmt.Errorf(
 					"%w: %s",
-					ErrTplFailTriggered, fmt.Sprint(a...),
+					ErrTemplateFailTriggered, fmt.Sprint(a...),
 				)
 			}
 			return ""

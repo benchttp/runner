@@ -9,9 +9,9 @@ var (
 	// ErrInvalidStrategy reports an unknown strategy set.
 	ErrInvalidStrategy = errors.New("invalid strategy")
 
-	// ErrTplFailTriggered a fail triggered by a user using the function
-	// {{ fail }} in an output template.
-	ErrTplFailTriggered = errors.New("test failed")
+	// ErrTemplateFailTriggered a fail triggered by a user
+	// using the function {{ fail }} in an output template.
+	ErrTemplateFailTriggered = errors.New("test failed")
 
 	errTemplateEmpty  = errors.New("empty template")
 	errTemplateSyntax = errors.New("template syntax error")
