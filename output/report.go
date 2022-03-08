@@ -19,6 +19,13 @@ import (
 	"github.com/benchttp/runner/requester"
 )
 
+// make export functions mockable
+var (
+	exportStdout   = export.Stdout
+	exportJSONFile = export.JSONFile
+	exportHTTP     = export.HTTP
+)
+
 type basicStats struct {
 	Min, Max, Mean time.Duration
 }
@@ -78,12 +85,12 @@ func (rep *Report) Export() error {
 	s := exportStrategy(rep.Metadata.Config.Output.Out)
 	if s.is(Stdout) {
 		rep.log(ansi.Bold("Summary"))
-		export.Stdout(rep)
+		exportStdout(rep)
 		ok = true
 	}
 	if s.is(JSONFile) {
 		filename := genFilename(time.Now().UTC())
-		if err := export.JSONFile(filename, rep); err != nil {
+		if err := exportJSONFile(filename, rep); err != nil {
 			errs = append(errs, err)
 		} else {
 			rep.log(ansi.Bold("JSON generated"))
@@ -92,7 +99,7 @@ func (rep *Report) Export() error {
 		ok = true
 	}
 	if s.is(Benchttp) {
-		if err := export.HTTP(rep); err != nil {
+		if err := exportHTTP(rep); err != nil {
 			errs = append(errs, err)
 		} else {
 			rep.log(ansi.Bold("Report sent to Benchttp"))
