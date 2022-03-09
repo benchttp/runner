@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"flag"
-	"fmt"
-	"os"
 
 	"github.com/benchttp/runner/config"
 	"github.com/benchttp/runner/internal/configfile"
@@ -136,16 +133,14 @@ func (*cmdRun) requesterConfig(cfg config.Global) requester.Config {
 
 // handleRunInterrupt handles the case when the runner is interrupted.
 func (*cmdRun) handleRunInterrupt() error {
-	reader := bufio.NewReader(os.Stdin)
 	// TODO: list output strategies
 	// TODO: do not prompt if strategy is stdout only
 	// TODO: add config option "output.generateOnCancel" and remove prompt?
-	fmt.Printf("\nBenchmark interrupted, generate output anyway? (yes/no): ")
-	line, _, err := reader.ReadLine()
+	v, err := promptf("\nBenchmark interrupted, generate output anyway? (yes/no): ")
 	if err != nil {
 		return err
 	}
-	if string(line) != "yes" {
+	if v != "yes" {
 		return errors.New("benchmark interrupted without output")
 	}
 	return nil
