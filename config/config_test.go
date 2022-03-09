@@ -2,11 +2,11 @@ package config_test
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -16,7 +16,7 @@ import (
 var validBody = config.NewBody("raw", `{"key0": "val0", "key1": "val1"}`)
 
 func TestGlobal_Validate(t *testing.T) {
-	t.Run("test valid configuration", func(t *testing.T) {
+	t.Run("return nil if config is valid", func(t *testing.T) {
 		cfg := config.Global{
 			Request: config.Request{
 				Body: validBody,
@@ -29,20 +29,19 @@ func TestGlobal_Validate(t *testing.T) {
 				GlobalTimeout:  5,
 			},
 			Output: config.Output{
-				Out: []config.OutputStrategy{"benchttp", "json", "stdout"},
+				Out: []config.OutputStrategy{"stdout", "json", "benchttp"},
 			},
 		}
-		err := cfg.Validate()
-		if err != nil {
-			t.Errorf("valid configuration not considered as such")
+		if err := cfg.Validate(); err != nil {
+			t.Errorf("unexpected error: %v", err)
 		}
 	})
 
-	t.Run("test invalid configuration returns ErrInvalid error with correct messages", func(t *testing.T) {
+	t.Run("return cumulated errors if config in invalid", func(t *testing.T) {
 		cfg := config.Global{
 			Request: config.Request{
 				Body: config.Body{},
-			}.WithURL("github-com/benchttp"),
+			}.WithURL("abc"),
 			Runner: config.Runner{
 				Requests:       -5,
 				Concurrency:    -5,
@@ -50,30 +49,31 @@ func TestGlobal_Validate(t *testing.T) {
 				RequestTimeout: -5,
 				GlobalTimeout:  -5,
 			},
+			Output: config.Output{
+				Out: []config.OutputStrategy{config.OutputStdout, "bad-output"},
+			},
 		}
+
 		err := cfg.Validate()
 		if err == nil {
-			t.Errorf("invalid configuration considered valid")
-		} else {
-			if !errorContains(err, "-url: "+cfg.Request.URL.String()+" is not a valid url") {
-				t.Errorf("\n- information about invalid url missing from error message")
-			}
-			if !errorContains(err, "-requests: must be >= 0, we got ") {
-				t.Errorf("\n- information about invalid requests number missing from error message")
-			}
-			if !errorContains(err, "-concurrency: must be > 0 and <= requests") {
-				t.Errorf("\n- information about invalid concurrency number missing from error message")
-			}
-			if !errorContains(err, "-interval: must be > 0") {
-				t.Errorf("\n- information about invalid concurrency number missing from error message")
-			}
-			if !errorContains(err, "-timeout: must be > 0, we got") {
-				t.Errorf("\n- information about invalid timeout missing from error message")
-			}
-			if !errorContains(err, "-globalTimeout: must be > 0, we got ") {
-				t.Errorf("\n- information about invalid globalTimeout missing from error message")
-			}
+			t.Fatal("invalid configuration considered valid")
 		}
+
+		var errInvalid *config.InvalidConfigError
+		if !errors.As(err, &errInvalid) {
+			t.Fatalf("unexpected error type: %T", err)
+		}
+
+		errs := errInvalid.Errors
+		findErrorOrFail(t, errs, `url (""): invalid`)
+		findErrorOrFail(t, errs, `requests (-5): want >= 0`)
+		findErrorOrFail(t, errs, `concurrency (-5): want > 0 and <= requests (-5)`)
+		findErrorOrFail(t, errs, `interval (-5): want >= 0`)
+		findErrorOrFail(t, errs, `requestTimeout (-5): want > 0`)
+		findErrorOrFail(t, errs, `globalTimeout (-5): want > 0`)
+		findErrorOrFail(t, errs, `out ("bad-output"): want one or many of "benchttp", "json", "stdout"`)
+
+		t.Logf("got error:\n%v", errInvalid)
 	})
 }
 
@@ -315,6 +315,17 @@ func TestRequest_Value(t *testing.T) {
 
 // helpers
 
+// findErrorOrFail fails t if no error in src matches msg.
+func findErrorOrFail(t *testing.T, src []error, msg string) {
+	t.Helper()
+	for _, err := range src {
+		if err.Error() == msg {
+			return
+		}
+	}
+	t.Errorf("missing error: %v", msg)
+}
+
 func sameRequests(a, b *http.Request) bool {
 	if a == nil || b == nil {
 		return a == b
@@ -327,13 +338,4 @@ func sameRequests(a, b *http.Request) bool {
 		a.URL.String() == b.URL.String() &&
 		bytes.Equal(ab, bb) &&
 		reflect.DeepEqual(a.Header, b.Header)
-}
-
-// errorContains returns trus if err's message contains expected string,
-// false otherwise
-func errorContains(err error, expected string) bool {
-	if err == nil {
-		return expected == ""
-	}
-	return strings.Contains(err.Error(), expected)
 }
