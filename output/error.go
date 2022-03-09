@@ -2,7 +2,10 @@ package output
 
 import (
 	"errors"
+	"net/http"
 	"strings"
+
+	"github.com/benchttp/runner/output/export"
 )
 
 var (
@@ -34,4 +37,20 @@ func (e *ExportError) Error() string {
 	}
 
 	return b.String()
+}
+
+// HasAuthError returns true if any of the errors in ExportError
+// is an export.HTTPResponseError with code http.StatusUnauthorized.
+func (e *ExportError) HasAuthError() bool {
+	for _, err := range e.Errors {
+		if !errors.Is(err, export.ErrHTTPResponse) {
+			continue
+		}
+		var errCode *export.HTTPResponseError
+		if !errors.As(err, &errCode) || errCode == nil {
+			continue
+		}
+		return errCode.Code == http.StatusUnauthorized
+	}
+	return false
 }
