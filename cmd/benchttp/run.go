@@ -72,7 +72,7 @@ func (cmd *cmdRun) execute(args []string) error {
 		}
 	}
 
-	return output.New(rep, cfg).Export()
+	return cmd.handleOutputError(output.New(rep, cfg).Export())
 }
 
 // parseArgs parses input args as config fields and returns
@@ -149,4 +149,19 @@ func (*cmdRun) handleRunInterrupt() error {
 		return errors.New("benchmark interrupted without output")
 	}
 	return nil
+}
+
+func (*cmdRun) handleOutputError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var errExport *output.ExportError
+	if errors.As(err, &errExport) && errExport != nil && errExport.HasAuthError() {
+		// TODO: improve UX (e.g. prompt to ask github token directly)
+		return errors.New(
+			"authentification to benchttp server failed, " +
+				`please run "benchttp auth login" and restart the benchmark`,
+		)
+	}
+	return err
 }
