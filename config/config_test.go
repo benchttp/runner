@@ -24,6 +24,7 @@ func TestGlobal_Validate(t *testing.T) {
 			Runner: config.Runner{
 				Requests:       5,
 				Concurrency:    5,
+				Interval:       5,
 				RequestTimeout: 5,
 				GlobalTimeout:  5,
 			},
@@ -45,6 +46,7 @@ func TestGlobal_Validate(t *testing.T) {
 			Runner: config.Runner{
 				Requests:       -5,
 				Concurrency:    -5,
+				Interval:       -5,
 				RequestTimeout: -5,
 				GlobalTimeout:  -5,
 			},
@@ -60,6 +62,9 @@ func TestGlobal_Validate(t *testing.T) {
 				t.Errorf("\n- information about invalid requests number missing from error message")
 			}
 			if !errorContains(err, "-concurrency: must be > 0 and <= requests") {
+				t.Errorf("\n- information about invalid concurrency number missing from error message")
+			}
+			if !errorContains(err, "-interval: must be > 0") {
 				t.Errorf("\n- information about invalid concurrency number missing from error message")
 			}
 			if !errorContains(err, "-timeout: must be > 0, we got") {
