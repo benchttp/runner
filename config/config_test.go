@@ -1,6 +1,8 @@
 package config_test
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -238,7 +240,89 @@ func TestRequest_WithURL(t *testing.T) {
 	})
 }
 
+func TestRequest_Value(t *testing.T) {
+	testcases := []struct {
+		label  string
+		in     config.Request
+		expMsg string
+	}{
+		{
+			label:  "return error if url is empty",
+			in:     config.Request{},
+			expMsg: "empty url",
+		},
+		{
+			label:  "return error if url is invalid",
+			in:     config.Request{URL: &url.URL{Scheme: ""}},
+			expMsg: "bad url",
+		},
+		{
+			label:  "return error if NewRequest fails",
+			in:     config.Request{Method: "é", URL: &url.URL{Scheme: "http"}},
+			expMsg: `net/http: invalid method "é"`,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.label, func(t *testing.T) {
+			gotReq, gotErr := tc.in.Value()
+			if gotErr == nil {
+				t.Fatal("exp error, got nil")
+			}
+
+			if gotMsg := gotErr.Error(); gotMsg != tc.expMsg {
+				t.Errorf("\nexp %q\ngot %q", tc.expMsg, gotMsg)
+			}
+
+			if gotReq != nil {
+				t.Errorf("exp nil, got %v", gotReq)
+			}
+		})
+	}
+
+	t.Run("return request with added headers", func(t *testing.T) {
+		in := config.Request{
+			Method: "POST",
+			Header: http.Header{"key": []string{"val"}},
+			Body:   config.Body{Content: []byte("abc")},
+		}.WithURL("http://a.b")
+
+		expReq, err := http.NewRequest(
+			in.Method,
+			in.URL.String(),
+			bytes.NewReader(in.Body.Content),
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expReq.Header = in.Header
+
+		gotReq, gotErr := in.Value()
+		if gotErr != nil {
+			t.Fatal(err)
+		}
+
+		if !sameRequests(gotReq, expReq) {
+			t.Errorf("\nexp %#v\ngot %#v", expReq, gotReq)
+		}
+	})
+}
+
 // helpers
+
+func sameRequests(a, b *http.Request) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+
+	ab, _ := io.ReadAll(a.Body)
+	bb, _ := io.ReadAll(b.Body)
+
+	return a.Method == b.Method &&
+		a.URL.String() == b.URL.String() &&
+		bytes.Equal(ab, bb) &&
+		reflect.DeepEqual(a.Header, b.Header)
+}
 
 // errorContains returns trus if err's message contains expected string,
 // false otherwise
