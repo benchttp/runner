@@ -133,6 +133,14 @@ func (cfg Global) Override(c Global, fields ...string) Global {
 	return cfg
 }
 
+// overrideHeader overrides cfg's Request.Header with the values from newHeader.
+// For every key in newHeader:
+//
+// - If it's not present in cfg.Request.Header, it is added.
+//
+// - If it's already present in cfg.Request.Header, the value is replaced.
+//
+// - All other keys in cfg.Request.Header are left untouched.
 func (cfg *Global) overrideHeader(newHeader http.Header) {
 	if newHeader == nil {
 		return
@@ -145,7 +153,8 @@ func (cfg *Global) overrideHeader(newHeader http.Header) {
 	}
 }
 
-// Validate returns the config and a not nil ErrInvalid if any of the fields provided by the user is not valid
+// Validate returns a non-nil InvalidConfigError if any of its fields
+// does not meet the requirements.
 func (cfg Global) Validate() error { //nolint:gocognit
 	errs := []error{}
 	appendError := func(err error) {

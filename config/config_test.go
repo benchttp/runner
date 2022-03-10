@@ -37,7 +37,7 @@ func TestGlobal_Validate(t *testing.T) {
 		}
 	})
 
-	t.Run("return cumulated errors if config in invalid", func(t *testing.T) {
+	t.Run("return cumulated errors if config is invalid", func(t *testing.T) {
 		cfg := config.Global{
 			Request: config.Request{
 				Body: config.Body{},
