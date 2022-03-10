@@ -44,9 +44,13 @@ func (e *ExportError) Error() string {
 }
 
 // HasAuthError returns true if any of the errors in ExportError
-// is an export.HTTPResponseError with code http.StatusUnauthorized.
+// is an error related to authentification, i.e. ErrNoToken or
+// an export.HTTPResponseError with code http.StatusUnauthorized.
 func (e *ExportError) HasAuthError() bool {
 	for _, err := range e.Errors {
+		if errors.Is(err, ErrNoToken) {
+			return true
+		}
 		if !errors.Is(err, export.ErrHTTPResponse) {
 			continue
 		}

@@ -16,12 +16,27 @@ func TestExportError_HasAuthError(t *testing.T) {
 		exp   bool
 	}{
 		{
+			label: "return false with no errors",
+			errs:  []error{},
+			exp:   false,
+		},
+		{
 			label: "return false without auth errors",
 			errs:  []error{errors.New("any error")},
 			exp:   false,
 		},
 		{
-			label: "return true with auth errors",
+			label: "return true with ErrNoToken",
+			errs:  []error{output.ErrNoToken},
+			exp:   true,
+		},
+		{
+			label: "return true with Unauthorized error",
+			errs:  []error{export.ErrHTTPResponse.WithCode(http.StatusUnauthorized)},
+			exp:   true,
+		},
+		{
+			label: "return true with mixed errors including auth error",
 			errs: []error{
 				errors.New("any error"),
 				export.ErrHTTPResponse.WithCode(http.StatusUnauthorized),
