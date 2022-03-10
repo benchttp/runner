@@ -6,6 +6,7 @@ import (
 	"flag"
 
 	"github.com/benchttp/runner/config"
+	"github.com/benchttp/runner/internal/auth"
 	"github.com/benchttp/runner/internal/configfile"
 	"github.com/benchttp/runner/internal/configflags"
 	"github.com/benchttp/runner/internal/signals"
@@ -67,6 +68,10 @@ func (cmd *cmdRun) execute(args []string) error {
 		} else {
 			return err
 		}
+	}
+
+	if err := auth.ReadToken(); err != nil {
+		return err
 	}
 
 	return cmd.handleOutputError(output.New(rep, cfg).Export())
