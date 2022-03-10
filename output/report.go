@@ -83,26 +83,16 @@ func (rep *Report) Export() error {
 		ok = true
 	}
 	if s.is(JSONFile) {
-		filename := genFilename()
-		if err := export.JSONFile(filename, rep); err != nil {
+		if err := rep.exportJSONFile(); err != nil {
 			errs = append(errs, err)
-		} else {
-			rep.log(ansi.Bold("JSON generated"))
-			fmt.Println(filename) // always print output filename
 		}
 		ok = true
 	}
 	if s.is(Benchttp) {
-		if auth.UserToken == "" {
-			errs = append(errs, ErrNoToken)
-		} else {
-			if err := export.HTTP(rep); err != nil {
-				errs = append(errs, err)
-			} else {
-				rep.log(ansi.Bold("Report sent to Benchttp"))
-			}
-			ok = true
+		if err := rep.exportHTTP(); err != nil {
+			errs = append(errs, err)
 		}
+		ok = true
 	}
 
 	if !ok {
@@ -112,6 +102,30 @@ func (rep *Report) Export() error {
 		return &ExportError{Errors: errs}
 	}
 	return rep.errTplFailTriggered
+}
+
+// exportJSONFile exports the Report as a timestamped JSON file
+// located in the working directory.
+func (rep *Report) exportJSONFile() error {
+	filename := genFilename()
+	if err := export.JSONFile(filename, rep); err != nil {
+		return err
+	}
+	rep.log(ansi.Bold("JSON generated"))
+	fmt.Println(filename) // always print output filename
+	return nil
+}
+
+// exportHTTP exports the Report to Benchttp server.
+func (rep *Report) exportHTTP() error {
+	if auth.UserToken == "" {
+		return ErrNoToken
+	}
+	if err := export.HTTP(rep); err != nil {
+		return err
+	}
+	rep.log(ansi.Bold("Report sent to Benchttp"))
+	return nil
 }
 
 // export.Interface implementation
