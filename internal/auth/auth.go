@@ -22,17 +22,9 @@ var (
 	ErrTokenSave = errors.New("cannot save token")
 )
 
-// userToken is the retrieved user token from the token file.
-// It must be set using ReadToken.
-var userToken string
-
 // ReadToken reads a token from a file and sets userToken to the retrieved
 // value or returns a non-nil error that is either ErrTokenFind or ErrTokenRead.
 func ReadToken() (string, error) {
-	if userToken != "" {
-		return userToken, nil
-	}
-
 	// Resolve token path
 	tokenPath, err := tokenPath()
 	if err != nil {
