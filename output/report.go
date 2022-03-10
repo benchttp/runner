@@ -15,6 +15,7 @@ import (
 
 	"github.com/benchttp/runner/ansi"
 	"github.com/benchttp/runner/config"
+	"github.com/benchttp/runner/internal/auth"
 	"github.com/benchttp/runner/output/export"
 	"github.com/benchttp/runner/requester"
 )
@@ -92,12 +93,16 @@ func (rep *Report) Export() error {
 		ok = true
 	}
 	if s.is(Benchttp) {
-		if err := export.HTTP(rep); err != nil {
-			errs = append(errs, err)
+		if auth.UserToken == "" {
+			errs = append(errs, ErrNoToken)
 		} else {
-			rep.log(ansi.Bold("Report sent to Benchttp"))
+			if err := export.HTTP(rep); err != nil {
+				errs = append(errs, err)
+			} else {
+				rep.log(ansi.Bold("Report sent to Benchttp"))
+			}
+			ok = true
 		}
-		ok = true
 	}
 
 	if !ok {
@@ -179,6 +184,9 @@ func (rep *Report) HTTPRequest() (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Set request headers with user token
+	r.Header.Set("Authorization", "Bearer "+auth.UserToken)
 
 	return r, nil
 }

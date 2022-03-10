@@ -133,9 +133,6 @@ func (*cmdRun) requesterConfig(cfg config.Global) requester.Config {
 
 // handleRunInterrupt handles the case when the runner is interrupted.
 func (*cmdRun) handleRunInterrupt() error {
-	// TODO: list output strategies
-	// TODO: do not prompt if strategy is stdout only
-	// TODO: add config option "output.generateOnCancel" and remove prompt?
 	v, err := promptf("\nBenchmark interrupted, generate output anyway? (yes/no): ")
 	if err != nil {
 		return err
@@ -151,8 +148,8 @@ func (*cmdRun) handleOutputError(err error) error {
 		return nil
 	}
 	var errExport *output.ExportError
-	if errors.As(err, &errExport) && errExport != nil && errExport.HasAuthError() {
-		// TODO: improve UX (e.g. prompt to ask github token directly)
+	if errors.Is(err, output.ErrNoToken) ||
+		errors.As(err, &errExport) && errExport != nil && errExport.HasAuthError() {
 		return errors.New(
 			"authentification to benchttp server failed, " +
 				`please run "benchttp auth login" and restart the benchmark`,

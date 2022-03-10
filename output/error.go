@@ -12,6 +12,10 @@ var (
 	// ErrInvalidStrategy reports an unknown strategy set.
 	ErrInvalidStrategy = errors.New("invalid strategy")
 
+	// ErrNoToken reports a user token not set when exporting a report
+	// to benchttp server.
+	ErrNoToken = errors.New("user token not set")
+
 	// ErrTplFailTriggered a fail triggered by a user using the function
 	// {{ fail }} in an output template.
 	ErrTplFailTriggered = errors.New("test failed")
