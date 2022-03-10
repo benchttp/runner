@@ -62,3 +62,14 @@ func (e *ExportError) HasAuthError() bool {
 	}
 	return false
 }
+
+// ExportErrorOf reads err as an ExportError and returns it.
+// If err is not an ExportError, it returns an empty *ExportError
+// (non nil) for convenience.
+func ExportErrorOf(err error) *ExportError {
+	var e *ExportError
+	if errors.As(err, &e) && e != nil {
+		return e
+	}
+	return &ExportError{}
+}

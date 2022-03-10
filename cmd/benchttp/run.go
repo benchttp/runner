@@ -147,9 +147,7 @@ func (*cmdRun) handleOutputError(err error) error {
 	if err == nil {
 		return nil
 	}
-	var errExport *output.ExportError
-	if errors.Is(err, output.ErrNoToken) ||
-		errors.As(err, &errExport) && errExport != nil && errExport.HasAuthError() {
+	if output.ExportErrorOf(err).HasAuthError() {
 		return errors.New(
 			"authentification to benchttp server failed, " +
 				`please run "benchttp auth login" and restart the benchmark`,
