@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/benchttp/runner/ansi"
 	"github.com/benchttp/runner/internal/auth"
 )
+
+// tokenURL is the URL to the webapp where the user can get a token.
+const tokenURL = "https://www.benchttp.app/login" // nolint:gosec // no creds
 
 // cmdAuth handles subcommand "benchttp auth [options]".
 type cmdAuth struct {
@@ -34,24 +35,13 @@ func (cmd cmdAuth) execute(args []string) error {
 	}
 }
 
-const (
-	tokenURL  = "https://www.benchttp.app/login" // nolint:gosec // no creds
-	tokenDir  = ".config/benchttp"               // nolint:gosec // no creds
-	tokenName = "token.txt"
-)
-
 func (cmd cmdAuth) login() error {
 	token, err := promptf("Visit %s and paste the token:\n", tokenURL)
 	if err != nil {
 		return err
 	}
 
-	tokenPath, err := cmd.tokenPath()
-	if err != nil {
-		return err
-	}
-
-	if err := auth.SaveToken(tokenPath, token); err != nil {
+	if err := auth.SaveToken(token); err != nil {
 		return err
 	}
 
@@ -60,31 +50,10 @@ func (cmd cmdAuth) login() error {
 }
 
 func (cmd cmdAuth) logout() error {
-	tokenPath, err := cmd.tokenPath()
-	if err != nil {
-		return err
-	}
-
-	if err := auth.SaveToken(tokenPath, ""); err != nil {
+	if err := auth.DeleteToken(); err != nil {
 		return err
 	}
 
 	fmt.Println("Successfully logged out.")
 	return nil
-}
-
-func (cmd cmdAuth) tokenPath() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		// TODO: handle error
-		return "", err
-	}
-
-	dir := filepath.Join(home, tokenDir)
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		// TODO: handle error
-		return "", err
-	}
-
-	return filepath.Join(dir, tokenName), nil
 }
