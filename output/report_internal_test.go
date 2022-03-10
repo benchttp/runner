@@ -84,7 +84,7 @@ func TestReport_Export(t *testing.T) {
 
 		cfg := newConfigWithStrat(config.OutputStdout)
 		rep := New(requester.Benchmark{}, cfg)
-		rep.errTplFailTriggered = ErrTemplateFailTriggered
+		rep.errTemplateFailTriggered = ErrTemplateFailTriggered
 
 		if err := rep.Export(); !errors.Is(err, ErrTemplateFailTriggered) {
 			t.Errorf(

@@ -44,7 +44,7 @@ type Report struct {
 
 	stats basicStats
 
-	errTplFailTriggered error
+	errTemplateFailTriggered error
 
 	log func(v ...interface{})
 }
@@ -113,7 +113,7 @@ func (rep *Report) Export() error {
 	if len(errs) != 0 {
 		return &ExportError{Errors: errs}
 	}
-	return rep.errTplFailTriggered
+	return rep.errTemplateFailTriggered
 }
 
 // export.Interface implementation

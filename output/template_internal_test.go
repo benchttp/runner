@@ -114,7 +114,7 @@ func TestReport_templateFuncs(t *testing.T) {
 			t.Errorf("unexpected output: exp always %q, got %q", "", got)
 		}
 
-		gotErr := rep.errTplFailTriggered
+		gotErr := rep.errTemplateFailTriggered
 		if !errors.Is(gotErr, ErrTemplateFailTriggered) {
 			t.Fatalf("unexpected error:\nexp ErrTemplateFailTriggered\ngot %v", gotErr)
 		}
