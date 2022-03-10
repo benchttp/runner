@@ -16,9 +16,6 @@ type cmdAuth struct {
 	flagset *flag.FlagSet
 }
 
-// ensure cmdAuth implements command
-var _ command = (*cmdAuth)(nil)
-
 func (cmd cmdAuth) execute(args []string) error {
 	if len(args) != 2 {
 		cmd.flagset.Usage()

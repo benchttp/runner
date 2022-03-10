@@ -15,7 +15,6 @@ import (
 
 	"github.com/benchttp/runner/ansi"
 	"github.com/benchttp/runner/config"
-	"github.com/benchttp/runner/internal/auth"
 	"github.com/benchttp/runner/output/export"
 	"github.com/benchttp/runner/requester"
 )
@@ -36,6 +35,8 @@ type Report struct {
 		FinishedAt time.Time
 	}
 
+	userToken string
+
 	stats basicStats
 
 	errTplFailTriggered error
@@ -43,8 +44,11 @@ type Report struct {
 	log func(v ...interface{})
 }
 
-// New returns a Report initialized with bk and cfg.
-func New(bk requester.Benchmark, cfg config.Global) *Report {
+// New returns a Report initialized with the input benchmark, the config
+// used to run it and a user token. The user token is used to send export
+// the Report to Benchttp server. If config.OutputBenchttp is not set in
+// cfg, then the token is ignored.
+func New(bk requester.Benchmark, cfg config.Global, token string) *Report {
 	outputLogger := newLogger(cfg.Output.Silent)
 	return &Report{
 		Benchmark: bk,
@@ -56,7 +60,8 @@ func New(bk requester.Benchmark, cfg config.Global) *Report {
 			FinishedAt: time.Now(),
 		},
 
-		log: outputLogger.Println,
+		userToken: token,
+		log:       outputLogger.Println,
 	}
 }
 
@@ -118,7 +123,7 @@ func (rep *Report) exportJSONFile() error {
 
 // exportHTTP exports the Report to Benchttp server.
 func (rep *Report) exportHTTP() error {
-	if auth.UserToken == "" {
+	if rep.userToken == "" {
 		return ErrNoToken
 	}
 	if err := export.HTTP(rep); err != nil {
@@ -200,7 +205,7 @@ func (rep *Report) HTTPRequest() (*http.Request, error) {
 	}
 
 	// Set request headers with user token
-	r.Header.Set("Authorization", "Bearer "+auth.UserToken)
+	r.Header.Set("Authorization", "Bearer "+rep.userToken)
 
 	return r, nil
 }
