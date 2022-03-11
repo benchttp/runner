@@ -18,6 +18,7 @@ func TestReport_Export(t *testing.T) {
 	testcases := []struct {
 		label      string
 		strategies []config.OutputStrategy
+		userToken  string
 		failJSON   bool
 		failHTTP   bool
 		expErr     string
@@ -25,6 +26,7 @@ func TestReport_Export(t *testing.T) {
 		{
 			label:      "return ErrInvalidStrategy if Strategy is invalid",
 			strategies: []config.OutputStrategy{"nostrat"},
+			userToken:  "",
 			failJSON:   true,
 			failHTTP:   true,
 			expErr:     ErrInvalidStrategy.Error(),
@@ -32,6 +34,7 @@ func TestReport_Export(t *testing.T) {
 		{
 			label:      "return JSON error if exportJSONFile fails",
 			strategies: []config.OutputStrategy{config.OutputJSON},
+			userToken:  "",
 			failJSON:   true,
 			failHTTP:   true,
 			expErr:     "output:\n  - JSON error",
@@ -39,9 +42,18 @@ func TestReport_Export(t *testing.T) {
 		{
 			label:      "return HTTP error if exportHTTP fails",
 			strategies: []config.OutputStrategy{config.OutputBenchttp},
+			userToken:  "abc",
 			failJSON:   true,
 			failHTTP:   true,
 			expErr:     "output:\n  - HTTP error",
+		},
+		{
+			label:      "return ErrNoToken if exportHTTP is used without a token",
+			strategies: []config.OutputStrategy{config.OutputBenchttp},
+			userToken:  "",
+			failJSON:   true,
+			failHTTP:   true,
+			expErr:     "output:\n  - user token not set",
 		},
 		{
 			label: "return cumulated errors",
@@ -49,9 +61,10 @@ func TestReport_Export(t *testing.T) {
 				config.OutputJSON,
 				config.OutputBenchttp,
 			},
-			failJSON: true,
-			failHTTP: true,
-			expErr:   "output:\n  - JSON error\n  - HTTP error",
+			userToken: "abc",
+			failJSON:  true,
+			failHTTP:  true,
+			expErr:    "output:\n  - JSON error\n  - HTTP error",
 		},
 		{
 			label: "happy path",
@@ -60,9 +73,10 @@ func TestReport_Export(t *testing.T) {
 				config.OutputJSON,
 				config.OutputBenchttp,
 			},
-			failJSON: false,
-			failHTTP: false,
-			expErr:   "",
+			userToken: "abc",
+			failJSON:  false,
+			failHTTP:  false,
+			expErr:    "",
 		},
 	}
 
@@ -71,7 +85,7 @@ func TestReport_Export(t *testing.T) {
 			mockExportFuncs(tc.failJSON, tc.failHTTP)
 
 			cfg := newConfigWithStrat(tc.strategies...)
-			rep := New(requester.Benchmark{}, cfg)
+			rep := New(requester.Benchmark{}, cfg, tc.userToken)
 
 			if err := rep.Export(); err != nil && err.Error() != tc.expErr {
 				t.Errorf("unexpected error:\nexp %q\ngot %q", tc.expErr, err)
@@ -83,7 +97,7 @@ func TestReport_Export(t *testing.T) {
 		mockExportFuncs(true, true)
 
 		cfg := newConfigWithStrat(config.OutputStdout)
-		rep := New(requester.Benchmark{}, cfg)
+		rep := New(requester.Benchmark{}, cfg, "")
 		rep.errTemplateFailTriggered = ErrTemplateFailTriggered
 
 		if err := rep.Export(); !errors.Is(err, ErrTemplateFailTriggered) {

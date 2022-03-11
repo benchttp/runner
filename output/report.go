@@ -120,7 +120,7 @@ func (rep *Report) Export() error {
 // located in the working directory.
 func (rep *Report) exportJSONFile() error {
 	filename := genFilename(time.Now().UTC())
-	if err := export.JSONFile(filename, rep); err != nil {
+	if err := exportJSONFile(filename, rep); err != nil {
 		return err
 	}
 	rep.log(ansi.Bold("JSON generated"))
@@ -133,7 +133,7 @@ func (rep *Report) exportHTTP() error {
 	if rep.userToken == "" {
 		return ErrNoToken
 	}
-	if err := export.HTTP(rep); err != nil {
+	if err := exportHTTP(rep); err != nil {
 		return err
 	}
 	rep.log(ansi.Bold("Report sent to Benchttp"))
